@@ -14,3 +14,8 @@ pluginManagement {
 }
 
 rootProject.name = "pokkit"
+
+include(":app")
+include(":bangumi")
+include(":pixiv")
+include(":shared")
