@@ -17,10 +17,12 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation(compose.components.resources)
                 implementation(project(":shared"))
-
+                implementation(project(":bangumi"))
+                //jetbrains
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
                 implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
                 implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+                implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.0-beta01")
             }
         }
     }

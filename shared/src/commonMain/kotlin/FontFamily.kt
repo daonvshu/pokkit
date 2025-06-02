@@ -2,8 +2,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import com.eant.shared.generated.resources.*
-import com.eant.shared.generated.resources.Res
+import com.daonvshu.shared.generated.resources.*
+import com.daonvshu.shared.generated.resources.Res
 import org.jetbrains.compose.resources.Font
 
 @Composable

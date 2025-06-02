@@ -47,6 +47,9 @@ import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -229,10 +232,15 @@ fun App() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+        NavHost(
+            navController = rememberNavController(),
+            startDestination = "bangumi"
         ) {
-
+            composable("bangumi") {
+                BangumiMain()
+            }
+            composable("pixiv") {
+            }
         }
     }
 }

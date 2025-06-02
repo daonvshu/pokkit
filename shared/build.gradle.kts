@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "com.eant"
+group = "com.daonvshu"
 version = "1.0-SNAPSHOT"
 
 kotlin {
@@ -18,6 +18,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material)
                 implementation(compose.components.resources)
+                //jetbrains
                 implementation("org.jetbrains.compose.material:material-icons-core:1.6.11")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
             }

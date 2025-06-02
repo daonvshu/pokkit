@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "com.eant"
+group = "com.daonvshu"
 version = "1.0-SNAPSHOT"
 
 kotlin {
@@ -15,6 +15,12 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation(compose.components.resources)
                 implementation(project(":shared"))
+                //jetbrains
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+                implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.0-beta01")
+                //3rd
             }
         }
     }
