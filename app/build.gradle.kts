@@ -16,6 +16,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(compose.components.resources)
+                implementation(project(":shared"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
                 implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
