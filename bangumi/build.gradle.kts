@@ -21,6 +21,11 @@ kotlin {
                 implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
                 implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.0-beta01")
                 //3rd
+                implementation("com.squareup.retrofit2:retrofit:3.0.0")
+                implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+                implementation("com.squareup.okhttp3:okhttp:4.11.0")
+                implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+                implementation("org.jsoup:jsoup:1.20.1")
             }
         }
     }

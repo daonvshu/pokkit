@@ -1,0 +1,29 @@
+CREATE TABLE IF NOT EXISTS MikanDataRecord (
+	mikanId	        INTEGER DEFAULT -1,
+	bindBangumiId	INTEGER NOT NULL DEFAULT -1,
+	link	        TEXT,
+	seasonTime	    INTEGER,
+	dayOfWeek	    INTEGER,
+	title	        TEXT,
+	thumbnail       TEXT,
+	favorite        INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX unique_id_mikan ON MikanDataRecord (mikanId, seasonTime, dayOfWeek);
+
+insertData:
+INSERT INTO MikanDataRecord (mikanId, bindBangumiId, link, seasonTime, dayOfWeek, title, thumbnail, favorite)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(mikanId, seasonTime, dayOfWeek) DO UPDATE SET
+    bindBangumiId = excluded.bindBangumiId,
+    link = excluded.link,
+    title = excluded.title,
+    thumbnail = excluded.thumbnail,
+    favorite = excluded.favorite
+    ;
+
+countOfSeasonTime:
+SELECT COUNT(*) FROM MikanDataRecord WHERE seasonTime = ?;
+
+selectAll:
+SELECT * FROM MikanDataRecord WHERE seasonTime = ?;

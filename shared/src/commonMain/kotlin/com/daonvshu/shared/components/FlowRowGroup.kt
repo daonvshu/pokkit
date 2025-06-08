@@ -1,4 +1,4 @@
-package components
+package com.daonvshu.shared.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background

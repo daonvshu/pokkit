@@ -1,3 +1,5 @@
+package com.daonvshu.pokkit
+
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,3 +1,5 @@
+package com.daonvshu.mikan
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,10 +15,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import components.DashedDivider
-import components.DividerOrientation
-import components.VerticalNavBar
-import pages.MikanDataView
+import com.daonvshu.mikan.pages.MikanDataView
+import com.daonvshu.shared.components.DashedDivider
+import com.daonvshu.shared.components.DividerOrientation
+import com.daonvshu.shared.components.VerticalNavBar
 
 @Composable
 fun BangumiMain() {
