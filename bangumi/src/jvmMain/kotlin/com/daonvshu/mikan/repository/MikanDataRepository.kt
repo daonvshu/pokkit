@@ -2,7 +2,8 @@ package com.daonvshu.mikan.repository
 
 import com.daonvshu.mikan.network.MikanApi
 import com.daonvshu.mikan.utils.MikanDataParseUtil
-import com.daonvshu.shared.database.MikanDataRecord
+import com.daonvshu.shared.database.Databases
+import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.settings.AppSettings
 import java.io.File
 import java.time.LocalDate
@@ -31,7 +32,7 @@ class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         val seasonTime = MikanDataParseUtil.getSeasonTimePointByIndex(year, seasonIndex)
         if (!isDataReloadRequired(seasonTime)) {
             println("reload mikan season data from cache...")
-            return MikanDbRepository.getAllData(seasonTime)
+            return Databases.mikanDataRecordService.getAllData(seasonTime)
         }
 
         val seasonStrings = arrayOf("冬", "春", "夏", "秋")
@@ -48,13 +49,13 @@ class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
          */
         println("parse data...")
         val records = MikanDataParseUtil.parseData(seasonTime, data)
-        MikanDbRepository.insertData(records)
+        Databases.mikanDataRecordService.insertData(records)
         AppSettings.settings.general.mikan.lastUpdateTime = System.currentTimeMillis()
         AppSettings.save()
         return records
     }
 
-    private fun isDataReloadRequired(seasonTime: Long): Boolean {
+    private suspend fun isDataReloadRequired(seasonTime: Long): Boolean {
         val mikanGeneral = AppSettings.settings.general.mikan
         val todayStart = LocalDate.now()
             .atStartOfDay()  // 转成当天00:00:00的LocalDateTime
@@ -64,7 +65,7 @@ class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         if (mikanGeneral.lastUpdateTime < todayStart) {
             return true
         }
-        if (MikanDbRepository.isEmptyRecord(seasonTime)) {
+        if (Databases.mikanDataRecordService.isEmptyRecord(seasonTime)) {
             return true
         }
         return false

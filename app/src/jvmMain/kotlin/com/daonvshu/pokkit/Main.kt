@@ -55,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.daonvshu.shared.database.Databases
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -136,6 +137,8 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
 }
 
 fun main() = application {
+    Databases.init()
+
     var isOpen by remember { mutableStateOf(true) }
 
     if (isOpen) {

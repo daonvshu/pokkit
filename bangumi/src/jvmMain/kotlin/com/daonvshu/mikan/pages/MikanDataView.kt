@@ -19,7 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,7 +33,6 @@ import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_error_image
-import com.daonvshu.shared.generated.resources.ic_paw
 import org.jetbrains.compose.resources.painterResource
 import java.util.Calendar
 
@@ -108,11 +109,11 @@ fun BangumiItemView(vm: MikanDataViewVm) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(weekData) { item ->
-            val state = if (item.thumbnail.isNullOrEmpty()) {
+            val state = if (item.thumbnail.isEmpty()) {
                 MikanDataViewVm.ImageLoadState.ERROR
             } else {
                 LaunchedEffect(item.thumbnail) {
-                    vm.loadImage(item.thumbnail!!)
+                    vm.loadImage(item.thumbnail)
                 }
                 vm.imageLoadState[item.thumbnail] ?: MikanDataViewVm.ImageLoadState.LOADING
             }
@@ -152,12 +153,15 @@ fun BangumiItemView(vm: MikanDataViewVm) {
                                     bitmap = vm.imageCache[item.thumbnail]!!,
                                     contentDescription = "thumbnail",
                                     contentScale = ContentScale.Crop,
+                                    colorFilter = if (item.link.isEmpty())
+                                        ColorFilter.tint(Color(0xFFD9D9D9), blendMode = BlendMode.Color)
+                                    else null
                                 )
                             }
                         }
                     }
                     Text(
-                        item.title ?: "unknown",
+                        item.title,
                         fontSize = 14.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,

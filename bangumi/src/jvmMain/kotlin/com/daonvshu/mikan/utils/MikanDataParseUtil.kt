@@ -1,6 +1,6 @@
 package com.daonvshu.mikan.utils
 
-import com.daonvshu.shared.database.MikanDataRecord
+import com.daonvshu.shared.database.schema.MikanDataRecord
 import org.jsoup.Jsoup
 import java.time.LocalDate
 import java.time.ZoneId
@@ -35,14 +35,14 @@ object MikanDataParseUtil {
                     val title = a.attr("title")
 
                     result.add(MikanDataRecord(
-                        mikanId = bangumiId.toLong(),
+                        mikanId = bangumiId.toInt(),
                         bindBangumiId = -1,
                         link = link,
                         seasonTime = seasonTime,
-                        dayOfWeek = weekDay.toLong(),
+                        dayOfWeek = weekDay.toInt(),
                         title = title,
                         thumbnail = thumbnail,
-                        favorite = null
+                        favorite = false
                     ))
                 }
             }

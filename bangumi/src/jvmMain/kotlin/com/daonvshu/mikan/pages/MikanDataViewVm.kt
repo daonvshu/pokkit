@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daonvshu.mikan.network.MikanApi
 import com.daonvshu.mikan.repository.MikanDataRepository
-import com.daonvshu.shared.database.MikanDataRecord
+import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.utils.ImageCacheLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,7 +60,7 @@ class MikanDataViewVm : ViewModel() {
     fun reloadWeekData() {
         println("reload week data: ${weekDayFilter.value}")
         weekSeasonData.value = seasonData.filter {
-            it.dayOfWeek == weekDayFilter.value.toLong()
+            it.dayOfWeek == weekDayFilter.value
         }
     }
 
