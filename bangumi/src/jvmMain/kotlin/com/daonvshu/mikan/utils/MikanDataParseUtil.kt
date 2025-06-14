@@ -1,6 +1,5 @@
 package com.daonvshu.mikan.utils
 
-import com.daonvshu.mikan.network.MikanApi
 import com.daonvshu.shared.database.MikanDataRecord
 import org.jsoup.Jsoup
 import java.time.LocalDate
@@ -27,12 +26,12 @@ object MikanDataParseUtil {
                     val span = li.select("span")
                     var thumbnail = span.attr("data-src")
                     if (thumbnail.isNotEmpty()) {
-                        thumbnail = MikanApi.HOST + thumbnail.split("?")[0]
+                        thumbnail = thumbnail.split("?")[0]
                     }
                     val bangumiId = span.attr("data-bangumiid")
 
                     val a = li.select("a")
-                    val link = MikanApi.HOST + a.attr("href")
+                    val link = a.attr("href")
                     val title = a.attr("title")
 
                     result.add(MikanDataRecord(
