@@ -18,12 +18,22 @@ interface MikanDataRepositoryInterface {
      * @throws okio.IOException 网络请求错误
      */
     suspend fun getDataBySeason(year: Int, seasonIndex: Int): List<MikanDataRecord>
+
+    /**
+     * 修改收藏状态
+     * @param item 番剧数据
+     */
+    suspend fun changeFavorite(item: MikanDataRecord)
 }
 
 class DebugMikanDataRepository : MikanDataRepositoryInterface {
     override suspend fun getDataBySeason(year: Int, seasonIndex: Int): List<MikanDataRecord> {
         val data = File(".test/mikan_season_data.html").readText()
         return MikanDataParseUtil.parseData(MikanDataParseUtil.getSeasonTimePointByIndex(year, seasonIndex), data)
+    }
+
+    override suspend fun changeFavorite(item: MikanDataRecord) {
+        println("change favorite: ${item.title}")
     }
 }
 
@@ -55,7 +65,11 @@ class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         return records
     }
 
-    private suspend fun isDataReloadRequired(seasonTime: Long): Boolean {
+    override suspend fun changeFavorite(item: MikanDataRecord) {
+        Databases.mikanDataRecordService.updateFavorite(item)
+    }
+
+    private fun isDataReloadRequired(seasonTime: Long): Boolean {
         val mikanGeneral = AppSettings.settings.general.mikan
         val todayStart = LocalDate.now()
             .atStartOfDay()  // 转成当天00:00:00的LocalDateTime

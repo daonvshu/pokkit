@@ -36,6 +36,8 @@ class MikanDataViewVm : ViewModel() {
         }
     )
 
+    val favoriteFilter = MutableStateFlow(false)
+
     private var seasonData = emptyList<MikanDataRecord>()
 
     val weekSeasonData = MutableStateFlow(emptyList<MikanDataRecord>())
@@ -60,7 +62,29 @@ class MikanDataViewVm : ViewModel() {
     fun reloadWeekData() {
         println("reload week data: ${weekDayFilter.value}")
         weekSeasonData.value = seasonData.filter {
-            it.dayOfWeek == weekDayFilter.value
+            it.dayOfWeek == weekDayFilter.value && if (favoriteFilter.value) {
+                it.favorite
+            } else {
+                true
+            }
+        }
+    }
+
+    fun changeFavorite(item: MikanDataRecord) {
+        val toFavorite = !item.favorite
+
+        val copy: (MikanDataRecord) -> MikanDataRecord = {
+            if (it.mikanId == item.mikanId && it.dayOfWeek == item.dayOfWeek) {
+                it.copy(favorite = toFavorite)
+            } else {
+                it
+            }
+        }
+        seasonData = seasonData.map(copy)
+        weekSeasonData.value = weekSeasonData.value.map(copy)
+
+        viewModelScope.launch {
+            MikanDataRepository.get().changeFavorite(item.copy(favorite = toFavorite))
         }
     }
 

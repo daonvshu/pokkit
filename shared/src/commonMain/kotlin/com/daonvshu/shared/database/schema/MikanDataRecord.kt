@@ -2,16 +2,18 @@ package com.daonvshu.shared.database.schema
 
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.MigrationRunner.SchemaMigrations.index
-import kotlinx.coroutines.Dispatchers
+import com.daonvshu.shared.database.MigrationRunner.SchemaMigrations.uniqueIndex
+import com.daonvshu.shared.database.dbQuery
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.addLogger
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.upsert
 
 @Serializable
@@ -36,23 +38,19 @@ class MikanDataRecordService {
         val title = text("title")
         val thumbnail = text("thumbnail")
         val favorite = bool("favorite").default(false)
+
+        init {
+            uniqueIndex("unique_id_mikan", mikanId, seasonTime, dayOfWeek)
+        }
     }
 
     init {
-        index("unique_id_mikan", isUnique = true,
-            MikanDataRecords.mikanId, MikanDataRecords.seasonTime, MikanDataRecords.dayOfWeek)
         transaction(Databases.db) {
             SchemaUtils.create(MikanDataRecords)
         }
     }
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) {
-            //addLogger(StdOutSqlLogger)
-            block()
-        }
-
-    suspend fun insertData(record: MikanDataRecord) = dbQuery {
+    fun insertData(record: MikanDataRecord) = dbQuery {
         MikanDataRecords.upsert {
             it[mikanId] = record.mikanId
             it[bindBangumiId] = record.bindBangumiId
@@ -65,13 +63,13 @@ class MikanDataRecordService {
         }
     }
 
-    suspend fun insertData(mikanData: List<MikanDataRecord>) {
+    fun insertData(mikanData: List<MikanDataRecord>) {
         for (data in mikanData) {
             insertData(data)
         }
     }
 
-    suspend fun isEmptyRecord(seasonTime: Long): Boolean = dbQuery {
+    fun isEmptyRecord(seasonTime: Long): Boolean = dbQuery {
         val count = transaction(Databases.db) {
             addLogger(StdOutSqlLogger)
             MikanDataRecords
@@ -83,7 +81,7 @@ class MikanDataRecordService {
         return@dbQuery count == 0L
     }
 
-    suspend fun getAllData(seasonTime: Long): List<MikanDataRecord> = dbQuery {
+    fun getAllData(seasonTime: Long): List<MikanDataRecord> = dbQuery {
         MikanDataRecords
             .selectAll()
             .where { MikanDataRecords.seasonTime eq seasonTime }
@@ -99,5 +97,14 @@ class MikanDataRecordService {
                     favorite = it[MikanDataRecords.favorite]
                 )
             }
+    }
+
+    fun updateFavorite(record: MikanDataRecord) = dbQuery {
+        MikanDataRecords.update({ (MikanDataRecords.mikanId eq record.mikanId) and
+                    (MikanDataRecords.seasonTime eq record.seasonTime) and
+                    (MikanDataRecords.dayOfWeek eq record.dayOfWeek)
+        }) {
+            it[favorite] = record.favorite
+        }
     }
 }

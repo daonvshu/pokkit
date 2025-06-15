@@ -1,9 +1,12 @@
 package com.daonvshu.mikan.pages
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +28,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,12 +85,24 @@ fun YearFilter(vm: MikanDataViewVm) {
 @Composable
 fun SeasonFilter(vm: MikanDataViewVm) {
     val selectedSeason by vm.filterSeason.collectAsStateWithLifecycle()
-    FlowRowGroup(
-        title = "季度：",
-        items = listOf("冬季", "春季", "夏季", "秋季"),
-        selectedIndex = selectedSeason,
-    ) { index, _ ->
-        vm.filterSeason.value = index
+    Row(modifier = Modifier.fillMaxWidth()) {
+        FlowRowGroup(
+            modifier = Modifier.weight(1f),
+            title = "季度：",
+            items = listOf("冬季", "春季", "夏季", "秋季"),
+            selectedIndex = selectedSeason,
+        ) { index, _ ->
+            vm.filterSeason.value = index
+        }
+
+        val favoriteFilter by vm.favoriteFilter.collectAsStateWithLifecycle()
+        Text(
+            modifier = Modifier.clickable {
+                vm.favoriteFilter.value = !favoriteFilter
+                vm.reloadWeekData()
+            },
+            text = if (favoriteFilter) "\u2764\uFE0E" else "\uD83E\uDD0D"
+        )
     }
 }
 
@@ -102,11 +124,16 @@ fun WeekFilter(vm: MikanDataViewVm) {
 @Composable
 fun BangumiItemView(vm: MikanDataViewVm) {
     val weekData by vm.weekSeasonData.collectAsStateWithLifecycle()
+
+    val gridState = rememberLazyListState()
+    val flingBehavior = rememberSnapFlingBehavior(lazyListState = gridState)
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(6),
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        flingBehavior = flingBehavior
     ) {
         items(weekData) { item ->
             val state = if (item.thumbnail.isEmpty()) {
@@ -126,7 +153,10 @@ fun BangumiItemView(vm: MikanDataViewVm) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(1f),
+                            .aspectRatio(1f)
+                            .clickable(item.link.isNotEmpty()) {
+
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         when (state) {
@@ -161,7 +191,19 @@ fun BangumiItemView(vm: MikanDataViewVm) {
                         }
                     }
                     Text(
-                        item.title,
+                        text = buildAnnotatedString {
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    "favorite",
+                                    linkInteractionListener = {
+                                        vm.changeFavorite(item)
+                                    }
+                                )
+                            ) {
+                                append(if (item.favorite) "\u2764\uFE0E" else "\uD83E\uDD0D")
+                            }
+                            append(item.title)
+                        },
                         fontSize = 14.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
