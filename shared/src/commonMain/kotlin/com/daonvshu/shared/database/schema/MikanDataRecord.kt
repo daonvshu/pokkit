@@ -21,10 +21,10 @@ data class MikanDataRecord(
     val mikanId: Int = -1,
     val bindBangumiId: Int = -1,
     val link: String = "",
-    val seasonTime: Long,
-    val dayOfWeek: Int,
-    val title: String,
-    val thumbnail: String,
+    val seasonTime: Long = -1,
+    val dayOfWeek: Int = -1,
+    val title: String = "",
+    val thumbnail: String = "",
     val favorite: Boolean = false,
 )
 

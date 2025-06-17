@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun<T> FlowRowGroup(
     modifier: Modifier = Modifier,
-    title: String,
+    title: String = "",
     items: List<T>,
     selectedValue: T? = null,
     selectedIndex: Int? = null,
@@ -41,16 +41,19 @@ fun<T> FlowRowGroup(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(
-            modifier = Modifier.height(28.dp),
-        ) {
-            Text(title,
-                fontWeight = FontWeight.Bold,
-                color = normalTextColor,
-                textAlign = TextAlign.End,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
+        if (title.isNotEmpty()) {
+            Box(
+                modifier = Modifier.height(28.dp),
+            ) {
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    color = normalTextColor,
+                    textAlign = TextAlign.End,
+                    fontSize = 16.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
 
         FlowRow(

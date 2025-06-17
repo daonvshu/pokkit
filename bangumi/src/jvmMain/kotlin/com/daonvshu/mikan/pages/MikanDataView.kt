@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.daonvshu.mikan.BangumiSharedVm
 import com.daonvshu.shared.components.FlowRowGroup
 import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.TabNavBar
@@ -47,7 +49,7 @@ import org.jetbrains.compose.resources.painterResource
 import java.util.Calendar
 
 @Composable
-fun MikanDataView() {
+fun MikanDataView(sharedVm: BangumiSharedVm) {
     val vm = viewModel { MikanDataViewVm() }
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -66,7 +68,7 @@ fun MikanDataView() {
         YearFilter(vm)
         SeasonFilter(vm)
         WeekFilter(vm)
-        BangumiItemView(vm)
+        BangumiItemView(vm, sharedVm)
     }
 }
 
@@ -122,7 +124,7 @@ fun WeekFilter(vm: MikanDataViewVm) {
 }
 
 @Composable
-fun BangumiItemView(vm: MikanDataViewVm) {
+fun BangumiItemView(vm: MikanDataViewVm, sharedVm: BangumiSharedVm) {
     val weekData by vm.weekSeasonData.collectAsStateWithLifecycle()
 
     val gridState = rememberLazyListState()
@@ -155,7 +157,8 @@ fun BangumiItemView(vm: MikanDataViewVm) {
                             .fillMaxWidth()
                             .aspectRatio(1f)
                             .clickable(item.link.isNotEmpty()) {
-
+                                sharedVm.detailBangumiItem = item
+                                sharedVm.navHost.value = "detail"
                             },
                         contentAlignment = Alignment.Center
                     ) {

@@ -21,10 +21,10 @@ object ImageCacheLoader {
             }
         }
         if (file.exists()) {
-            println("load image $url from cache...")
+            //println("load image $url from cache...")
             return file.inputStream().use { ImageIO.read(it)?.toComposeImageBitmap() }
         }
-        println("request image $url...")
+        //println("request image $url...")
         val response = serviceProvider(url)
         file.outputStream().use {
             it.write(response.bytes())

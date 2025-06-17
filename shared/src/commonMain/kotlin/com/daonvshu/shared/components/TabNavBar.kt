@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.ScrollableTabRow
 import androidx.compose.material.Tab
+import androidx.compose.material.TabPosition
 import androidx.compose.material.TabRow
 import androidx.compose.material.TabRowDefaults
 import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
@@ -22,6 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.daonvshu.shared.generated.resources.Res
@@ -35,24 +38,19 @@ fun TabNavBar(
     selectedIndex: Int,
     normalColor: Color,
     selectedColor: Color,
+    fontSize: TextUnit = 16.sp,
+    iconScale: Float = 1f,
+    scrollable: Boolean = false,
     onClicked: (Int) -> Unit,
 ) {
-    TabRow(
-        modifier = modifier,
-        selectedTabIndex = selectedIndex,
-        backgroundColor = Color.Transparent,
-        indicator = { tabPositions ->
-            TabRowDefaults.Indicator(
-                Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                color = selectedColor
-            )
-        },
-    ) {
+    val tabContent = @Composable {
         titles.forEachIndexed { index, title ->
-            val scale by animateFloatAsState(if (index == selectedIndex) 1f else 0f)
+            val scale by animateFloatAsState(if (index == selectedIndex) iconScale else 0f)
             Tab(
                 text = {
-                    Row {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         // 左侧箭头圆圈
                         Box(
                             modifier = Modifier.size(18.dp),
@@ -74,7 +72,7 @@ fun TabNavBar(
                             text = title,
                             color = selectedColor,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            fontSize = fontSize
                         )
                     }
                 },
@@ -85,5 +83,31 @@ fun TabNavBar(
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
         }
+    }
+
+    val indicator: @Composable (List<TabPosition>) -> Unit = { tabPositions ->
+        TabRowDefaults.Indicator(
+            Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
+            color = selectedColor
+        )
+    }
+
+    if (scrollable) {
+        ScrollableTabRow(
+            modifier = modifier,
+            selectedTabIndex = selectedIndex,
+            backgroundColor = Color.Transparent,
+            indicator = indicator,
+            tabs = tabContent,
+            edgePadding = 0.dp,
+        )
+    } else {
+        TabRow(
+            modifier = modifier,
+            selectedTabIndex = selectedIndex,
+            backgroundColor = Color.Transparent,
+            indicator = indicator,
+            tabs = tabContent,
+        )
     }
 }

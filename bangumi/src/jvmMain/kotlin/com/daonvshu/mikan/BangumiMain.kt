@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.daonvshu.mikan.pages.MikanBangumiDetailPage
 import com.daonvshu.mikan.pages.MikanDataView
 import com.daonvshu.shared.components.DashedDivider
 import com.daonvshu.shared.components.DividerOrientation
@@ -23,6 +24,7 @@ import com.daonvshu.shared.components.VerticalNavBar
 @Composable
 fun BangumiMain() {
     val viewModel = viewModel{ BangumiMainVm() }
+    val sharedVm = viewModel{ BangumiSharedVm() }
     Row {
         val selectedIndex by viewModel.menuItemIndex.collectAsStateWithLifecycle()
         val menus = arrayListOf("数据源(Mikan)", "搜索", "设置", "下载")
@@ -48,10 +50,14 @@ fun BangumiMain() {
                 .padding(20.dp)
         ) {
             val navController = rememberNavController()
-            LaunchedEffect(viewModel.navHost) {
-                viewModel.navHost.collect {
+            LaunchedEffect(sharedVm.navHost) {
+                sharedVm.navHost.collect {
                     if (it.isNotEmpty()) {
-                        navController.navigate(it)
+                        if (it == "pop") {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate(it)
+                        }
                     }
                 }
             }
@@ -61,7 +67,10 @@ fun BangumiMain() {
                 startDestination = "dataView"
             ) {
                 composable("dataView") {
-                    MikanDataView()
+                    MikanDataView(sharedVm)
+                }
+                composable("detail") {
+                    MikanBangumiDetailPage(sharedVm)
                 }
             }
         }
