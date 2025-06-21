@@ -51,7 +51,11 @@ class MikanDataRecordService {
     }
 
     fun insertData(record: MikanDataRecord) = dbQuery {
-        MikanDataRecords.upsert {
+        MikanDataRecords.upsert(
+            onUpdateExclude = arrayListOf(
+                MikanDataRecords.bindBangumiId, MikanDataRecords.favorite
+            )
+        ) {
             it[mikanId] = record.mikanId
             it[bindBangumiId] = record.bindBangumiId
             it[link] = record.link

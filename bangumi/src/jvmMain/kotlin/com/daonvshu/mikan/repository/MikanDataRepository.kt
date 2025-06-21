@@ -58,10 +58,12 @@ class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         println("write test data finish...")
          */
         println("parse data...")
-        val records = MikanDataParseUtil.parseData(seasonTime, data)
+        var records = MikanDataParseUtil.parseData(seasonTime, data)
         Databases.mikanDataRecordService.insertData(records)
         AppSettings.settings.general.mikan.lastUpdateTime = System.currentTimeMillis()
         AppSettings.save()
+
+        records = Databases.mikanDataRecordService.getAllData(seasonTime)
         return records
     }
 

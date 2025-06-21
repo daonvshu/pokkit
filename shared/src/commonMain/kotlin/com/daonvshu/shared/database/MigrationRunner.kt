@@ -26,6 +26,15 @@ object MigrationRunner {
 
                 if (appliedVersions.isEmpty()) {
                     println("No need run migrations. Database is empty.")
+                    val initVersion = if (migrations.isNotEmpty()) {
+                        migrations.last().version
+                    } else {
+                        0
+                    }
+                    SchemaMigrations.insert {
+                        it[version] = initVersion
+                        it[description] = "init database version."
+                    }
                     return@transaction
                 }
 
