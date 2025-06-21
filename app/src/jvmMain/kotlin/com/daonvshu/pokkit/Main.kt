@@ -1,6 +1,6 @@
 package com.daonvshu.pokkit
 
-import com.daonvshu.mikan.BangumiMain
+import com.daonvshu.bangumi.BangumiMain
 import com.daonvshu.shared.font.Calista
 import com.daonvshu.shared.font.ChillRoundGothic
 import androidx.compose.animation.animateColorAsState

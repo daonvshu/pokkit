@@ -1,4 +1,4 @@
-package com.daonvshu.mikan
+package com.daonvshu.bangumi
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,8 +15,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.daonvshu.mikan.pages.MikanBangumiDetailPage
-import com.daonvshu.mikan.pages.MikanDataView
+import com.daonvshu.bangumi.pages.MikanBangumiDetailPage
+import com.daonvshu.bangumi.pages.MikanDataView
 import com.daonvshu.shared.components.DashedDivider
 import com.daonvshu.shared.components.DividerOrientation
 import com.daonvshu.shared.components.VerticalNavBar

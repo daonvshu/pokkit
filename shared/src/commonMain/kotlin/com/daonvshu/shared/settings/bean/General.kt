@@ -5,5 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class General(
+    var proxyAddress: String = "127.0.0.1",
+    var proxyPort: Int = 7890,
+    var proxyEnabled: Boolean = true,
+
     val mikan: MikanGeneral = MikanGeneral(),
 )

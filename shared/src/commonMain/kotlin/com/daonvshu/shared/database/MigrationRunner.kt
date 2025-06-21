@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 object MigrationRunner {
     private val migrations = listOf<Migration>(
+        MigrationV1,
     )
 
     fun runAllMigrations(database: Database) {

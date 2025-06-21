@@ -1,4 +1,4 @@
-package com.daonvshu.mikan.utils
+package com.daonvshu.bangumi.utils
 
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import org.jsoup.Jsoup
@@ -51,4 +51,11 @@ object MikanDataParseUtil {
         }
         return result
     }
+
+    fun getBangumiIdFromData(data: String): Int {
+        val regex = """https?://bgm\.tv/subject/(\d+)""".toRegex()
+        val matchResult = regex.find(data)
+        return matchResult?.groupValues?.get(1)?.toInt() ?: -1
+    }
 }
+

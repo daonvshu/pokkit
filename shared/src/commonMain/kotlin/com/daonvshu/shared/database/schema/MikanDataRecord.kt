@@ -5,6 +5,7 @@ import com.daonvshu.shared.database.MigrationRunner.SchemaMigrations.index
 import com.daonvshu.shared.database.MigrationRunner.SchemaMigrations.uniqueIndex
 import com.daonvshu.shared.database.dbQuery
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.and
@@ -26,6 +27,10 @@ data class MikanDataRecord(
     val title: String = "",
     val thumbnail: String = "",
     val favorite: Boolean = false,
+    val summary: String = "",
+    val officialSite: String = "",
+    val eps: Int = 0,
+    val sites: String = "",
 )
 
 class MikanDataRecordService {
@@ -38,6 +43,10 @@ class MikanDataRecordService {
         val title = text("title")
         val thumbnail = text("thumbnail")
         val favorite = bool("favorite").default(false)
+        val summary = text("summary").default("")
+        val officialSite = text("officialSite").default("")
+        val eps = integer("eps").default(0)
+        val sites = text("sites").default("")
 
         init {
             uniqueIndex("unique_id_mikan", mikanId, seasonTime, dayOfWeek)
@@ -53,17 +62,20 @@ class MikanDataRecordService {
     fun insertData(record: MikanDataRecord) = dbQuery {
         MikanDataRecords.upsert(
             onUpdateExclude = arrayListOf(
-                MikanDataRecords.bindBangumiId, MikanDataRecords.favorite
+                MikanDataRecords.bindBangumiId,
+                MikanDataRecords.favorite,
+                MikanDataRecords.summary,
+                MikanDataRecords.officialSite,
+                MikanDataRecords.eps,
+                MikanDataRecords.sites
             )
         ) {
             it[mikanId] = record.mikanId
-            it[bindBangumiId] = record.bindBangumiId
             it[link] = record.link
             it[seasonTime] = record.seasonTime
             it[dayOfWeek] = record.dayOfWeek
             it[title] = record.title
             it[thumbnail] = record.thumbnail
-            it[favorite] = record.favorite
         }
     }
 
@@ -98,9 +110,36 @@ class MikanDataRecordService {
                     dayOfWeek = it[MikanDataRecords.dayOfWeek],
                     title = it[MikanDataRecords.title],
                     thumbnail = it[MikanDataRecords.thumbnail],
-                    favorite = it[MikanDataRecords.favorite]
+                    favorite = it[MikanDataRecords.favorite],
+                    summary = it[MikanDataRecords.summary],
+                    officialSite = it[MikanDataRecords.officialSite],
+                    eps = it[MikanDataRecords.eps],
+                    sites = it[MikanDataRecords.sites]
                 )
             }
+    }
+
+    fun getByMikanId(mikanId: Int): MikanDataRecord? = dbQuery {
+        MikanDataRecords
+            .selectAll()
+            .where { MikanDataRecords.mikanId eq mikanId }
+            .map {
+                MikanDataRecord(
+                    mikanId = it[MikanDataRecords.mikanId],
+                    bindBangumiId = it[MikanDataRecords.bindBangumiId],
+                    link = it[MikanDataRecords.link],
+                    seasonTime = it[MikanDataRecords.seasonTime],
+                    dayOfWeek = it[MikanDataRecords.dayOfWeek],
+                    title = it[MikanDataRecords.title],
+                    thumbnail = it[MikanDataRecords.thumbnail],
+                    favorite = it[MikanDataRecords.favorite],
+                    summary = it[MikanDataRecords.summary],
+                    officialSite = it[MikanDataRecords.officialSite],
+                    eps = it[MikanDataRecords.eps],
+                    sites = it[MikanDataRecords.sites]
+                )
+            }
+            .singleOrNull()
     }
 
     fun updateFavorite(record: MikanDataRecord) = dbQuery {
@@ -109,6 +148,25 @@ class MikanDataRecordService {
                     (MikanDataRecords.dayOfWeek eq record.dayOfWeek)
         }) {
             it[favorite] = record.favorite
+        }
+    }
+
+    fun updateDetailInfo(
+        mikanId: Int,
+        bindBangumiId: Int,
+        summary: String,
+        officialSite: String,
+        eps: Int,
+        sites: String
+    ) = dbQuery {
+        MikanDataRecords.update({
+            MikanDataRecords.mikanId eq mikanId
+        }) {
+            it[MikanDataRecords.bindBangumiId] = bindBangumiId
+            it[MikanDataRecords.summary] = summary
+            it[MikanDataRecords.officialSite] = officialSite
+            it[MikanDataRecords.eps] = eps
+            it[MikanDataRecords.sites] = sites
         }
     }
 }

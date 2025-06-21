@@ -1,7 +1,7 @@
-package com.daonvshu.mikan.pages
+package com.daonvshu.bangumi.pages
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
@@ -35,8 +35,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -47,15 +49,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.daonvshu.mikan.BangumiSharedVm
+import com.daonvshu.bangumi.BangumiSharedVm
 import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_back
 import com.daonvshu.shared.generated.resources.ic_download
-import com.daonvshu.shared.generated.resources.ic_paw
 import com.daonvshu.shared.generated.resources.ic_refresh
+import com.daonvshu.shared.generated.resources.ic_type_info
+import com.daonvshu.shared.generated.resources.ic_type_play
 import org.jetbrains.compose.resources.painterResource
+import java.awt.Scrollbar
 
 @Composable
 fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
@@ -63,6 +67,7 @@ fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
 
     LaunchedEffect(vm) {
         vm.loadImage(sharedVm.detailBangumiItem.thumbnail)
+        vm.updateDetail()
     }
 
     Column {
@@ -115,6 +120,7 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                     modifier = Modifier.size(24.dp),
                     onClick = {
                         //refresh data
+                        vm.updateDetail(true)
                     }
                 ) {
                     Icon(
@@ -138,17 +144,33 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                 }
             }
 
-            val scrollState = rememberScrollState()
             Box(
-                modifier = Modifier
+                Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(scrollState)
             ) {
-                Text(
-                    text = vm.data.link,
-                    fontSize = 12.sp,
-                    color = Color(0xFF98918F),
+                val scrollState = rememberScrollState()
+                val summary by vm.summary.collectAsStateWithLifecycle()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 4.dp, bottom = 4.dp, end = 8.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    Text(
+                        text = summary,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        color = Color(0xFF98918F),
+                    )
+                }
+
+                VerticalScrollbar(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .align(Alignment.CenterEnd)
+                        .width(8.dp),
+                    adapter = rememberScrollbarAdapter(scrollState)
                 )
             }
 
@@ -157,21 +179,24 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
             CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
                 fontSize = 14.sp, color = Color(0xFF6B4D36)
             )) {
+                val eps by vm.eps.collectAsStateWithLifecycle()
                 Row(
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text("集数：")
-                    Text("12")
+                    Text("$eps")
                 }
 
                 Row(
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
                     Text("相关链接：")
-                    val items = listOf("Source1", "Source2", "Source3", "Source4")
+                    val items by vm.sites.collectAsStateWithLifecycle()
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        val uriHandler = LocalUriHandler.current
                         items.forEachIndexed { index, item ->
                             Box(
                                 modifier = Modifier
@@ -179,7 +204,7 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                                     .height(24.dp)
                                     .clickable(
                                         onClick = {
-
+                                            uriHandler.openUri(item.url)
                                         }
                                     )
                                     .background(
@@ -187,24 +212,54 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                                         shape = RoundedCornerShape(6.dp)
                                     )
                             ) {
-                                Text(
-                                    text = item,
-                                    modifier = Modifier.padding(start = 10.dp, end = 10.dp)
-                                        .align(Alignment.Center),
-                                )
+                                Row (
+                                    modifier = Modifier.padding(start = 10.dp, end = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    when (item.type) {
+                                        "onair" -> {
+                                            Icon(
+                                                modifier = Modifier.height(16.dp),
+                                                painter = painterResource(Res.drawable.ic_type_play),
+                                                contentDescription = "onair",
+                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                            )
+                                        }
+                                        "resource" -> {
+                                            Icon(
+                                                modifier = Modifier.height(16.dp),
+                                                painter = painterResource(Res.drawable.ic_download),
+                                                contentDescription = "resource",
+                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                            )
+                                        }
+                                        "info" -> {
+                                            Icon(
+                                                modifier = Modifier.height(16.dp),
+                                                painter = painterResource(Res.drawable.ic_type_info),
+                                                contentDescription = "info",
+                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                            )
+                                        }
+                                     }
+
+                                    Text(item.name)
+                                }
                             }
                         }
                     }
                 }
 
                 Row {
+                    val officialSite by vm.officialSite.collectAsStateWithLifecycle()
                     Text("官方网站：")
                     Text(buildAnnotatedString {
                         withLink(LinkAnnotation.Url(
-                            "https://www.bilibili.com/",
+                            officialSite,
                             TextLinkStyles(style = SpanStyle(color = Color(0xFF22A9C3)))
                         )) {
-                            append("https://www.bilibili.com/")
+                            append(officialSite)
                         }
                     })
                 }

@@ -1,11 +1,11 @@
-package com.daonvshu.mikan.pages
+package com.daonvshu.bangumi.pages
 
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.daonvshu.mikan.network.MikanApi
-import com.daonvshu.mikan.repository.MikanDataRepository
+import com.daonvshu.bangumi.network.MikanApi
+import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.utils.ImageCacheLoader
 import kotlinx.coroutines.Dispatchers

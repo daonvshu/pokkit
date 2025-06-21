@@ -1,4 +1,4 @@
-package com.daonvshu.mikan
+package com.daonvshu.bangumi
 
 import androidx.lifecycle.ViewModel
 import com.daonvshu.shared.database.schema.MikanDataRecord

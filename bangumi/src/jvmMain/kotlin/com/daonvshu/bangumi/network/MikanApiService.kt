@@ -1,4 +1,4 @@
-package com.daonvshu.mikan.network
+package com.daonvshu.bangumi.network
 
 import okhttp3.ResponseBody
 import retrofit2.http.GET
@@ -16,5 +16,5 @@ interface MikanApiService {
     suspend fun getImage(@Url url: String): ResponseBody
 
     @GET("Home/Bangumi/{id}")
-    suspend fun getDetailPage(@Path("id") mikanId: Int): String
+    suspend fun getDetailPage(@Path("id") mikanId: Int): ResponseBody
 }
