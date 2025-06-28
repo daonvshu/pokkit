@@ -8,6 +8,7 @@ import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.utils.ImageCacheLoader
+import com.daonvshu.shared.utils.LogCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,14 +46,14 @@ class MikanDataViewVm : ViewModel() {
     fun reloadSeasonData() {
         clearImageCache()
         viewModelScope.launch(Dispatchers.IO) {
-            println("begin fetch season data...")
+            LogCollector.addLog("begin fetch season data...")
             try {
                 val records = MikanDataRepository.get().getDataBySeason(filterYear.value, filterSeason.value)
                 seasonData = records
-                println("fetch season data done...")
+                LogCollector.addLog("fetch season data done...")
                 reloadWeekData()
             } catch (e: SocketTimeoutException) {
-                println("connect timeout: ${e.message}")
+                LogCollector.addLog("connect timeout: ${e.message}")
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -60,7 +61,7 @@ class MikanDataViewVm : ViewModel() {
     }
 
     fun reloadWeekData() {
-        println("reload week data: ${weekDayFilter.value}")
+        LogCollector.addLog("reload week data: ${weekDayFilter.value}")
         weekSeasonData.value = seasonData.filter {
             it.dayOfWeek == weekDayFilter.value && if (favoriteFilter.value) {
                 it.favorite

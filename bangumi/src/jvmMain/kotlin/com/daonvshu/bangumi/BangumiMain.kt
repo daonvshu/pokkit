@@ -1,11 +1,16 @@
 package com.daonvshu.bangumi
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,7 +24,9 @@ import com.daonvshu.bangumi.pages.MikanBangumiDetailPage
 import com.daonvshu.bangumi.pages.MikanDataView
 import com.daonvshu.shared.components.DashedDivider
 import com.daonvshu.shared.components.DividerOrientation
+import com.daonvshu.shared.components.LogBox
 import com.daonvshu.shared.components.VerticalNavBar
+import com.daonvshu.shared.utils.LogCollector
 
 @Composable
 fun BangumiMain() {
@@ -28,13 +35,27 @@ fun BangumiMain() {
     Row {
         val selectedIndex by viewModel.menuItemIndex.collectAsStateWithLifecycle()
         val menus = arrayListOf("数据源(Mikan)", "搜索", "设置", "下载")
-        VerticalNavBar(
-            items = menus,
-            selectedIndex = selectedIndex,
-            normalColor = Color(0xFF6B4D36),
-            selectedColor = Color(0xFF22A9C3),
+        Column(
+            modifier = Modifier.width(200.dp)
         ) {
-            viewModel.menuItemIndex.value = it
+            VerticalNavBar(
+                modifier = Modifier.weight(1f),
+                items = menus,
+                selectedIndex = selectedIndex,
+                normalColor = Color(0xFF6B4D36),
+                selectedColor = Color(0xFF22A9C3),
+            ) {
+                viewModel.menuItemIndex.value = it
+            }
+
+            val logs by LogCollector.logs.collectAsState()
+            LogBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                textColor = Color(0xFF22A9C3).copy(alpha = 0.4f),
+                logList = logs
+            )
         }
 
         DashedDivider(

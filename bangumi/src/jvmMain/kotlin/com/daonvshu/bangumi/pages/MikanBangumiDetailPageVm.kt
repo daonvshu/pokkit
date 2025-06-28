@@ -8,6 +8,7 @@ import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.utils.ImageCacheLoader
+import com.daonvshu.shared.utils.LogCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -70,6 +71,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
 
     fun updateDetail(reload: Boolean = false) {
         if (!reload && data.bindBangumiId != -1) {
+            LogCollector.addLog("fetch detail from cache.")
             refreshUi()
             return
         }
@@ -79,13 +81,14 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                     MikanDataRepository.get().getDataById(data.mikanId)?.let {
                         data = it
                         refreshUi()
-                        println("fetch detail finished.")
+                        LogCollector.addLog("fetch detail finished.")
                     }
                 } else {
-                    println("update detail info fail!")
+                    LogCollector.addLog("update detail info fail!")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                LogCollector.addLog("fetch detail fail!")
             }
         }
     }
@@ -113,6 +116,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                 reloadTorrentLinksByFilter()
             } catch (e: Exception) {
                 e.printStackTrace()
+                LogCollector.addLog("fetch torrent links fail!")
             }
         }
     }

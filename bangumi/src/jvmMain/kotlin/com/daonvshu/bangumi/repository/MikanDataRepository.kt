@@ -8,6 +8,7 @@ import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.settings.AppSettings
+import com.daonvshu.shared.utils.LogCollector
 import java.io.File
 import java.net.URLEncoder
 import java.time.LocalDate
@@ -66,7 +67,7 @@ class DebugMikanDataRepository : MikanDataRepositoryImpl() {
     override suspend fun updateDetail(item: MikanDataRecord): Boolean {
         val data = File(".test/mikan_detail_page.html").readText()
         val bangumiId = MikanDataParseUtil.getBangumiIdFromData(data)
-        println("get bangumi id: $bangumiId")
+        LogCollector.addLog("get bangumi id: $bangumiId")
         return true
     }
 }
@@ -81,12 +82,12 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
     override suspend fun getDataBySeason(year: Int, seasonIndex: Int): List<MikanDataRecord> {
         val seasonTime = MikanDataParseUtil.getSeasonTimePointByIndex(year, seasonIndex)
         if (!isDataReloadRequired(seasonTime)) {
-            println("reload mikan season data from cache...")
+            LogCollector.addLog("reload mikan season data from cache...")
             return Databases.mikanDataRecordService.getAllData(seasonTime)
         }
 
         val seasonStrings = arrayOf("冬", "春", "夏", "秋")
-        println("request season data: year: $year, season: ${seasonStrings[seasonIndex]}")
+        LogCollector.addLog("request season data: year: $year, season: ${seasonStrings[seasonIndex]}")
         val response = MikanApi.apiService.getDataBySeason(year, seasonStrings[seasonIndex])
         val data = response.string()
         /*
@@ -118,16 +119,16 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
     override suspend fun updateDetail(item: MikanDataRecord): Boolean {
         var bangumiId = item.bindBangumiId
         if (bangumiId == -1) {
-            println("fetch bangumi id...")
+            LogCollector.addLog("fetch bangumi id...")
             val mikanDetailPage = MikanApi.apiService.getDetailPage(item.mikanId)
             bangumiId = MikanDataParseUtil.getBangumiIdFromData(mikanDetailPage.string())
             //File(".test/mikan_detail_page.html").writeText(mikanDetailPage.string())
         }
         if (bangumiId == -1) {
-            println("get bangumi id fail!")
+            LogCollector.addLog("get bangumi id fail!")
             return false
         }
-        println("fetch bangumi detail...")
+        LogCollector.addLog("fetch bangumi detail...")
         val detailData = BgmTvApi.apiService.getBangumiDetail(bangumiId)
 
         val seasonTime = item.seasonTime
@@ -142,7 +143,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             10,11,12 -> 4
             else -> 1
         }
-        println("fetch bangumi list info...")
+        LogCollector.addLog("fetch bangumi list info...")
         val bgmItems = BgmListApi.apiService.getBangumiList(year, season)
         val target = bgmItems.items.firstOrNull { item ->
             item.sites.any {
@@ -151,7 +152,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         }
 
         val sites = if (target != null) {
-            println("fetch site meta data...")
+            LogCollector.addLog("fetch site meta data...")
             val siteMeta = BgmListApi.apiService.getSiteMeta()
             val siteList = target.sites.map { site ->
                 val meta = siteMeta[site.site]
@@ -162,7 +163,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             }
             siteList.joinToString(",")
         } else {
-            println("get site meta fail!")
+            LogCollector.addLog("get site meta fail!")
             ""
         }
 
@@ -176,10 +177,13 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
 
     override suspend fun getTorrentLinks(item: MikanDataRecord, reload: Boolean): List<MikanTorrentLinkCache> {
         if (!reload && !isTorrentLinkReloadRequired(item.mikanId)) {
+            LogCollector.addLog("reload torrent link from cache...")
             return Databases.mikanTorrentLinkCacheService.getCaches(item.mikanId)
         }
 
+        LogCollector.addLog("request torrent link...")
         val data = MikanApi.apiService.getTorrentLinks(item.mikanId)
+        LogCollector.addLog("parse torrent link base info...")
         val links = mutableListOf<TorrentSimpleInfo>()
         data.channel?.items?.forEach { item ->
             val title = item.title
@@ -190,6 +194,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             }
         }
         val updateTime = System.currentTimeMillis()
+        LogCollector.addLog("parse torrent link to cache...")
         val caches = links.map { link ->
             var title = link.title.trim()
             if (title.startsWith("\u8203")) {
@@ -198,11 +203,15 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             val groupInfo = extractBracketContent(title)
             title = groupInfo.second
 
+            val eps = getEps(title)
+            if (eps == -1) {
+                LogCollector.addLog("get eps fail! title: $title")
+            }
             MikanTorrentLinkCache(
                 bindMikanId = item.mikanId,
                 fansub = groupInfo.first,
                 description = link.description,
-                eps = getEps(title),
+                eps = eps,
                 gb = title.contains(Regex("""简[体繁日中]?|中日|[Cc][Hh][Ss]|\[GB]|GB_|GB&| GB |【GB】""")),
                 downloadUrl = link.downloadUrl,
                 updateTime = updateTime
@@ -210,7 +219,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         }
         Databases.mikanTorrentLinkCacheService.clearCache(item.mikanId)
         Databases.mikanTorrentLinkCacheService.insertCaches(caches)
-        println("cache fetch size: ${caches.size}")
+        LogCollector.addLog("cache fetch size: ${caches.size}")
         return caches
     }
 
