@@ -6,6 +6,7 @@ import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.utils.MikanDataParseUtil
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.schema.MikanDataRecord
+import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.settings.AppSettings
 import java.io.File
 import java.net.URLEncoder
@@ -41,6 +42,13 @@ interface MikanDataRepositoryInterface {
      * @param item 番剧数据
      */
     suspend fun updateDetail(item: MikanDataRecord): Boolean
+
+    /**
+     * 获取番剧种子链接
+     * @param item 番剧数据
+     * @param reload 是否强制重新获取种子链接
+     */
+    suspend fun getTorrentLinks(item: MikanDataRecord, reload: Boolean): List<MikanTorrentLinkCache>
 }
 
 class DebugMikanDataRepository : MikanDataRepositoryImpl() {
@@ -62,6 +70,12 @@ class DebugMikanDataRepository : MikanDataRepositoryImpl() {
         return true
     }
 }
+
+data class TorrentSimpleInfo(
+    val title: String,
+    val description: String,
+    val downloadUrl: String,
+)
 
 open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
     override suspend fun getDataBySeason(year: Int, seasonIndex: Int): List<MikanDataRecord> {
@@ -160,6 +174,46 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         return true
     }
 
+    override suspend fun getTorrentLinks(item: MikanDataRecord, reload: Boolean): List<MikanTorrentLinkCache> {
+        if (!reload && !isTorrentLinkReloadRequired(item.mikanId)) {
+            return Databases.mikanTorrentLinkCacheService.getCaches(item.mikanId)
+        }
+
+        val data = MikanApi.apiService.getTorrentLinks(item.mikanId)
+        val links = mutableListOf<TorrentSimpleInfo>()
+        data.channel?.items?.forEach { item ->
+            val title = item.title
+            val description = item.description
+            val downloadUrl = item.enclosure?.url ?: ""
+            if (title.isNotEmpty() && description.isNotEmpty() && downloadUrl.isNotEmpty()) {
+                links.add(TorrentSimpleInfo(title, description, downloadUrl))
+            }
+        }
+        val updateTime = System.currentTimeMillis()
+        val caches = links.map { link ->
+            var title = link.title.trim()
+            if (title.startsWith("\u8203")) {
+                title = title.substring(1)
+            }
+            val groupInfo = extractBracketContent(title)
+            title = groupInfo.second
+
+            MikanTorrentLinkCache(
+                bindMikanId = item.mikanId,
+                fansub = groupInfo.first,
+                description = link.description,
+                eps = getEps(title),
+                gb = title.contains(Regex("""简[体繁日中]?|中日|[Cc][Hh][Ss]|\[GB]|GB_|GB&| GB |【GB】""")),
+                downloadUrl = link.downloadUrl,
+                updateTime = updateTime
+            )
+        }
+        Databases.mikanTorrentLinkCacheService.clearCache(item.mikanId)
+        Databases.mikanTorrentLinkCacheService.insertCaches(caches)
+        println("cache fetch size: ${caches.size}")
+        return caches
+    }
+
     private fun isDataReloadRequired(seasonTime: Long): Boolean {
         val mikanGeneral = AppSettings.settings.general.mikan
         val todayStart = LocalDate.now()
@@ -174,6 +228,35 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             return true
         }
         return false
+    }
+
+    private fun isTorrentLinkReloadRequired(mikanId: Int): Boolean {
+        val lastUpdate = Databases.mikanTorrentLinkCacheService.getLastUpdateTime(mikanId)
+        return lastUpdate + 6 * 60 * 60 * 1000 < System.currentTimeMillis() // 6小时
+    }
+
+    private fun extractBracketContent(input: String): Pair<String, String> {
+        // 正则，匹配开头的【内容】或者[内容]
+        val pattern = Regex("""^(?:【([^】]+)】|\[([^]]+)])""")
+        val matchResult = pattern.find(input)
+
+        return if (matchResult != null) {
+            // group 1或group 2有值即为提取内容
+            val content = matchResult.groups[1]?.value ?: matchResult.groups[2]?.value
+            // 剩余字符串从匹配结束位置开始截取
+            val remaining = input.substring(matchResult.range.last + 1)
+            Pair(content ?: "其他", remaining)
+        } else {
+            // 不匹配返回null和原字符串
+            Pair("其他", input)
+        }
+    }
+
+    private fun getEps(input: String): Int {
+        val pattern = Regex("""第(\d{1,3})[话集]|-\s*(\d{1,3})[vV]?\d?|\[(\d{1,3})[vV]?\d?]|【(\d{1,3})[vV]?\d?】""")
+        val cleaned = input.replace(Regex("-\\s*\\d+[bB][iI][tT]"), "")
+        val matchResult = pattern.find(cleaned)
+        return matchResult?.groups?.drop(1)?.firstOrNull() { it != null }?.value?.toIntOrNull() ?: -1
     }
 }
 

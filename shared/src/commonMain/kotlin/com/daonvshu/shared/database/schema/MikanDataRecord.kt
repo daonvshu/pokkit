@@ -70,6 +70,7 @@ class MikanDataRecordService {
                 MikanDataRecords.sites
             )
         ) {
+            it[bindBangumiId] = record.bindBangumiId
             it[mikanId] = record.mikanId
             it[link] = record.link
             it[seasonTime] = record.seasonTime

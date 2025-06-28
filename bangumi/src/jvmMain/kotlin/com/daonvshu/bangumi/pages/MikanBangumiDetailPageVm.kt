@@ -6,11 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.database.schema.MikanDataRecord
+import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.utils.ImageCacheLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+data class TorrentLinkData(
+    val fansub: String,
+    val torrent: MutableList<MikanTorrentLinkCache>
+)
 
 class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
 
@@ -21,6 +27,24 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     val officialSite = MutableStateFlow(data.officialSite)
 
     val eps = MutableStateFlow(data.eps)
+
+    var torrentLinkCaches = mutableListOf<TorrentLinkData>()
+
+    val torrentFilteredLinks = MutableStateFlow(emptyList<MikanTorrentLinkCache>())
+
+    val itemChecked = MutableStateFlow(emptyList<Boolean>())
+
+    val selectorDataFansubs = MutableStateFlow(emptyList<String>())
+
+    val filterFansubIndex = MutableStateFlow(-1)
+
+    val filterGb = MutableStateFlow(false)
+
+    val selectorDataEps = MutableStateFlow(emptyList<Int>())
+
+    val filterEps = MutableStateFlow(-1)
+
+    val filterIsAllSelected = MutableStateFlow(false)
 
     data class SiteInfo(
         val name: String,
@@ -64,6 +88,57 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                 e.printStackTrace()
             }
         }
+    }
+
+    fun updateTorrentLinks(reload: Boolean = false) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val caches = MikanDataRepository.get().getTorrentLinks(data, reload)
+                torrentLinkCaches.clear()
+                val fansubs = mutableListOf<String>()
+                caches.forEach {
+                    val index = fansubs.indexOf(it.fansub)
+                    if (index != -1) {
+                        torrentLinkCaches[index].torrent.add(it)
+                    } else {
+                        torrentLinkCaches.add(TorrentLinkData(it.fansub, mutableListOf(it)))
+                        fansubs.add(it.fansub)
+                    }
+                }
+                selectorDataFansubs.value = fansubs
+                if (fansubs.isNotEmpty()) {
+                    filterFansubIndex.value = 0
+                }
+                filterEps.value = -1
+                reloadTorrentLinksByFilter()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun reloadTorrentLinksByFilter() {
+        val eps = mutableListOf<Int>()
+        torrentLinkCaches[filterFansubIndex.value].torrent.forEach {
+            if (eps.indexOf(it.eps) == -1) {
+                eps.add(it.eps)
+            }
+        }
+        eps.removeIf { it == -1 }
+        if (eps.size == 1) {
+            eps.clear()
+        }
+        selectorDataEps.value = eps.sorted()
+        if (selectorDataEps.value.indexOf(filterEps.value) == -1) {
+            filterEps.value = -1
+        }
+
+        torrentFilteredLinks.value = torrentLinkCaches[filterFansubIndex.value].torrent.filter {
+            (it.gb || !filterGb.value) &&
+            (filterEps.value == -1 || it.eps == filterEps.value)
+        }
+
+        itemChecked.value = torrentFilteredLinks.value.map { false }
     }
 
     private fun refreshUi() {

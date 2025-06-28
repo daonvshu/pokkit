@@ -1,6 +1,7 @@
 package com.daonvshu.shared.database
 
 import com.daonvshu.shared.database.schema.MikanDataRecordService
+import com.daonvshu.shared.database.schema.MikanTorrentLinkCacheService
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -12,6 +13,7 @@ object Databases {
     lateinit var db: Database
 
     lateinit var mikanDataRecordService: MikanDataRecordService
+    lateinit var mikanTorrentLinkCacheService: MikanTorrentLinkCacheService
 
     fun init() {
         db = Database.connect(
@@ -22,6 +24,7 @@ object Databases {
         MigrationRunner.runAllMigrations(db)
 
         mikanDataRecordService = MikanDataRecordService()
+        mikanTorrentLinkCacheService = MikanTorrentLinkCacheService()
     }
 }
 

@@ -3,6 +3,7 @@ package com.daonvshu.shared.database
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.datetime.datetime
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -22,24 +23,19 @@ object MigrationRunner {
                 SchemaUtils.create(SchemaMigrations)
 
                 val appliedVersions = SchemaMigrations.selectAll()
+                    .orderBy(SchemaMigrations.version to SortOrder.DESC)
                     .map { it[SchemaMigrations.version] }
-                    .toSet()
 
                 if (appliedVersions.isEmpty()) {
                     println("No need run migrations. Database is empty.")
-                    val initVersion = if (migrations.isNotEmpty()) {
-                        migrations.last().version
-                    } else {
-                        0
-                    }
                     SchemaMigrations.insert {
-                        it[version] = initVersion
+                        it[version] = migrations.last().version
                         it[description] = "init database version."
                     }
                     return@transaction
                 }
 
-                val pendingMigrations = migrations.filter { it.version !in appliedVersions }
+                val pendingMigrations = migrations.filter { it.version > appliedVersions.first() }
 
                 if (pendingMigrations.isNotEmpty()) {
                     println("Pending migrations detected: ${pendingMigrations.map { it.version }}")

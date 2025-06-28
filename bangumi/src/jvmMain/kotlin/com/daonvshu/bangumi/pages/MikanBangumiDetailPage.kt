@@ -4,11 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,11 +19,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalTextStyle
@@ -30,27 +36,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.daonvshu.bangumi.BangumiSharedVm
+import com.daonvshu.shared.components.FlowRowGroup
 import com.daonvshu.shared.components.ImageLoadingIndicator
+import com.daonvshu.shared.components.NormalCheckbox
 import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_back
@@ -58,8 +60,8 @@ import com.daonvshu.shared.generated.resources.ic_download
 import com.daonvshu.shared.generated.resources.ic_refresh
 import com.daonvshu.shared.generated.resources.ic_type_info
 import com.daonvshu.shared.generated.resources.ic_type_play
+import io.github.mataku.middleellipsistext.MiddleEllipsisText
 import org.jetbrains.compose.resources.painterResource
-import java.awt.Scrollbar
 
 @Composable
 fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
@@ -68,6 +70,7 @@ fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
     LaunchedEffect(vm) {
         vm.loadImage(sharedVm.detailBangumiItem.thumbnail)
         vm.updateDetail()
+        vm.updateTorrentLinks()
     }
 
     Column {
@@ -108,11 +111,10 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
+                MiddleEllipsisText(
                     modifier = Modifier.weight(1f),
                     text = vm.data.title,
                     fontSize = 20.sp,
-                    overflow = TextOverflow.Ellipsis,
                     color = Color(0xFF6B4D36),
                 )
 
@@ -268,56 +270,148 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
     Column(
         modifier = Modifier.padding(top = 12.dp)
     ) {
-        var selectedIndex by remember { mutableStateOf(0) }
-        val group = listOf("ANi", "LoliHouse", "漫猫字幕组", "MingY", "喵萌奶茶屋", "北宇治字幕组", "NyaaSUB", "NyaaSUB-CN", "NyaaSUB-JP", "NyaaSUB-KR", "NyaaSUB-TW", "NyaaSUB-TH")
+        val selectedIndex by vm.filterFansubIndex.collectAsStateWithLifecycle()
+        val fansubs by vm.selectorDataFansubs.collectAsStateWithLifecycle()
 
-        TabNavBar(
-            titles = group,
-            selectedIndex = selectedIndex,
-            normalColor = Color(0xFF6B4D36),
-            selectedColor = Color(0xFF22A9C3),
-            scrollable = true,
-            fontSize = 14.sp,
-            iconScale = 0.8f,
-        ) {
-            selectedIndex = it
+        if (fansubs.isNotEmpty()) {
+            TabNavBar(
+                titles = fansubs,
+                selectedIndex = selectedIndex,
+                normalColor = Color(0xFF6B4D36),
+                selectedColor = Color(0xFF22A9C3),
+                scrollable = true,
+                fontSize = 14.sp,
+                iconScale = 0.8f,
+            ) {
+                vm.filterFansubIndex.value = it
+                vm.reloadTorrentLinksByFilter()
+            }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(
-                modifier = Modifier.size(24.dp),
-                onClick = {
-                    //refresh data
-                }
+        CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
+            fontSize = 14.sp, color = Color(0xFF6B4D36)
+        )) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painterResource(Res.drawable.ic_refresh),
-                    contentDescription = "",
-                    tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                val selectedAll by vm.filterIsAllSelected.collectAsStateWithLifecycle()
+                NormalCheckbox(
+                    checked = selectedAll,
+                    onCheckedChange = { checked ->
+                        vm.filterIsAllSelected.value = checked
+                        vm.itemChecked.value = vm.itemChecked.value.map { checked }
+                    },
+                    label = "全选"
                 )
+
+                val gb by vm.filterGb.collectAsStateWithLifecycle()
+                NormalCheckbox(
+                    checked = gb,
+                    onCheckedChange = { checked ->
+                        vm.filterGb.value = checked
+                        vm.reloadTorrentLinksByFilter()
+                    },
+                    label = "简体"
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(
+                    modifier = Modifier.size(24.dp),
+                    onClick = {
+                        vm.updateTorrentLinks(true)
+                    }
+                ) {
+                    Icon(
+                        painterResource(Res.drawable.ic_refresh),
+                        contentDescription = "",
+                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                    )
+                }
+
+                IconButton(
+                    modifier = Modifier.size(24.dp),
+                    onClick = {
+
+                    }
+                ) {
+                    Icon(
+                        painterResource(Res.drawable.ic_download),
+                        modifier = Modifier,
+                        contentDescription = "",
+                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                    )
+                }
             }
 
-            IconButton(
-                modifier = Modifier.size(24.dp),
-                onClick = {
-                    //refresh data
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painterResource(Res.drawable.ic_download),
-                    modifier = Modifier,
-                    contentDescription = "",
-                    tint = Color(0xFFFF639C).copy(alpha = 0.4f),
-                )
+                val eps by vm.selectorDataEps.collectAsStateWithLifecycle()
+                val epsSelected by vm.filterEps.collectAsStateWithLifecycle()
+                if (eps.isNotEmpty()) {
+                    FlowRowGroup(
+                        items = eps,
+                        selectedValue = epsSelected,
+                        itemWidth = 26.dp,
+                        itemHeight = 26.dp,
+                        fontSize = 14.sp,
+                        padding = 0.dp,
+                    ) { index, value ->
+                        if (vm.filterEps.value == value) {
+                            vm.filterEps.value = -1
+                        } else {
+                            vm.filterEps.value = value
+                        }
+                        vm.reloadTorrentLinksByFilter()
+                    }
+                }
+            }
+
+            val torrentFilteredLinks by vm.torrentFilteredLinks.collectAsStateWithLifecycle()
+            val itemChecked by vm.itemChecked.collectAsStateWithLifecycle()
+
+            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontSize = 13.sp)) {
+                val listState = rememberLazyListState()
+                val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+                LazyColumn(
+                    flingBehavior = flingBehavior,
+                ) {
+                    itemsIndexed(torrentFilteredLinks) { index, item ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            NormalCheckbox(
+                                checked = itemChecked[index],
+                                onCheckedChange = {
+                                    vm.itemChecked.value = vm.itemChecked.value.mapIndexed { i, it ->
+                                        if (index == i) {
+                                            !it
+                                        } else {
+                                            it
+                                        }
+                                    }
+                                    vm.filterIsAllSelected.value = vm.itemChecked.value.all { it }
+                                },
+                                label = item.description
+                            )
+                        }
+                    }
+                }
             }
         }
     }

@@ -21,8 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.format.Padding
 
 @Composable
 fun<T> FlowRowGroup(
@@ -31,6 +34,10 @@ fun<T> FlowRowGroup(
     items: List<T>,
     selectedValue: T? = null,
     selectedIndex: Int? = null,
+    itemWidth: Dp = 60.dp,
+    itemHeight: Dp = 28.dp,
+    fontSize: TextUnit = 16.sp,
+    padding: Dp = 10.dp,
     normalTextColor: Color = Color(0xFF6B4D36),
     selectedTextColor: Color = Color.White,
     normalBackgroundColor: Color = Color(0xFF6B4D36).copy(alpha = 0.1f),
@@ -43,14 +50,14 @@ fun<T> FlowRowGroup(
     ) {
         if (title.isNotEmpty()) {
             Box(
-                modifier = Modifier.height(28.dp),
+                modifier = Modifier.height(itemHeight),
             ) {
                 Text(
                     title,
                     fontWeight = FontWeight.Bold,
                     color = normalTextColor,
                     textAlign = TextAlign.End,
-                    fontSize = 16.sp,
+                    fontSize = fontSize,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
@@ -71,8 +78,8 @@ fun<T> FlowRowGroup(
                 )
                 Box(
                     modifier = Modifier
-                        .defaultMinSize(minWidth = 60.dp)
-                        .height(28.dp)
+                        .defaultMinSize(minWidth = itemWidth)
+                        .height(itemHeight)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -84,9 +91,9 @@ fun<T> FlowRowGroup(
                 ) {
                     Text(
                         text = item.toString(),
-                        modifier = Modifier.padding(start = 10.dp, end = 10.dp).align(Alignment.Center),
+                        modifier = Modifier.padding(start = padding, end = padding).align(Alignment.Center),
                         color = if (isSelected) selectedTextColor else normalTextColor,
-                        fontSize = 16.sp
+                        fontSize = fontSize
                     )
                 }
             }

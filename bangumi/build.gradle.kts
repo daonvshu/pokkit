@@ -23,9 +23,11 @@ kotlin {
                 //3rd
                 implementation("com.squareup.retrofit2:retrofit:3.0.0")
                 implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+                implementation("com.squareup.retrofit2:converter-simplexml:3.0.0")
                 implementation("com.squareup.okhttp3:okhttp:4.11.0")
                 implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
                 implementation("org.jsoup:jsoup:1.20.1")
+                implementation("io.github.mataku:middle-ellipsis-text:1.2.0")
             }
         }
     }
