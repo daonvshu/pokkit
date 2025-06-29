@@ -28,6 +28,9 @@ kotlin {
                 implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
                 implementation("org.jsoup:jsoup:1.20.1")
                 implementation("io.github.mataku:middle-ellipsis-text:1.2.0")
+                implementation("cafe.adriel.bonsai:bonsai-core:1.2.0")
+                implementation("cafe.adriel.bonsai:bonsai-file-system:1.2.0")
+                implementation("cafe.adriel.bonsai:bonsai-json:1.2.0")
             }
         }
     }

@@ -35,7 +35,7 @@ fun NormalCheckbox(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
-                modifier = Modifier.scale(0.8f).padding(4.dp),
+                modifier = Modifier.scale(0.8f).padding(top = 4.dp, bottom = 4.dp, end = 4.dp),
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,

@@ -17,7 +17,7 @@ object LogCollector {
     fun addLog(msg: String) {
         val now = timeFormat.format(Date())
         // 每次新增插入到末尾
-        _logs.value = (arrayOf(LogEntry(now, msg)) + _logs.value).takeLast(100)
+        _logs.value = (arrayOf(LogEntry(now, msg)) + _logs.value).take(100)
     }
 
     // 可选：清空日志

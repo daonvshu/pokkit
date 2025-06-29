@@ -31,6 +31,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,15 +39,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.daonvshu.bangumi.BangumiSharedVm
@@ -57,11 +61,14 @@ import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_back
 import com.daonvshu.shared.generated.resources.ic_download
+import com.daonvshu.shared.generated.resources.ic_modify
 import com.daonvshu.shared.generated.resources.ic_refresh
 import com.daonvshu.shared.generated.resources.ic_type_info
 import com.daonvshu.shared.generated.resources.ic_type_play
 import io.github.mataku.middleellipsistext.MiddleEllipsisText
 import org.jetbrains.compose.resources.painterResource
+import java.io.File
+import javax.swing.JFileChooser
 
 @Composable
 fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
@@ -76,6 +83,7 @@ fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
     Column {
         DetailInfoBox(vm, sharedVm)
         DownloadLinkView(vm)
+        DownloadDialog(vm)
     }
 }
 
@@ -305,6 +313,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
             ) {
                 val selectedAll by vm.filterIsAllSelected.collectAsStateWithLifecycle()
                 NormalCheckbox(
+                    modifier = Modifier.padding(vertical = 4.dp),
                     checked = selectedAll,
                     onCheckedChange = { checked ->
                         vm.filterIsAllSelected.value = checked
@@ -341,7 +350,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                 IconButton(
                     modifier = Modifier.size(24.dp),
                     onClick = {
-
+                        vm.showDownloadDialog.value = true
                     }
                 ) {
                     Icon(
@@ -381,6 +390,8 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                 }
             }
 
+            Spacer(modifier = Modifier.height(4.dp))
+
             val torrentFilteredLinks by vm.torrentFilteredLinks.collectAsStateWithLifecycle()
             val itemChecked by vm.itemChecked.collectAsStateWithLifecycle()
 
@@ -388,6 +399,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                 val listState = rememberLazyListState()
                 val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
                 LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
                     flingBehavior = flingBehavior,
                 ) {
                     itemsIndexed(torrentFilteredLinks) { index, item ->
@@ -396,6 +408,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             NormalCheckbox(
+                                modifier = Modifier.fillMaxWidth(),
                                 checked = itemChecked[index],
                                 onCheckedChange = {
                                     vm.itemChecked.value = vm.itemChecked.value.mapIndexed { i, it ->
@@ -409,6 +422,119 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                                 },
                                 label = item.description
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
+    val show by vm.showDownloadDialog.collectAsStateWithLifecycle()
+    if (show) {
+        Dialog(onDismissRequest = {
+            vm.showDownloadDialog.value = false
+        }) {
+            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
+                fontSize = 14.sp, color = Color(0xFF6B4D36)
+            )) {
+                Surface(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White),
+                ) {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
+                        ) {
+                            Text(
+                                "下载",
+                                fontSize = 18.sp,
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(horizontal = 16.dp),
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text("总大小：")
+                                Text("0GB")
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("保存路径：")
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
+                                ) {
+                                    Text("D:\\Bangumi",
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            .fillMaxWidth()
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        val chooser = JFileChooser()
+                                        chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                                        chooser.isAcceptAllFileFilterUsed = false
+                                        //chooser.currentDirectory = File("")
+                                        val result = chooser.showOpenDialog(null)
+                                        if (result == JFileChooser.APPROVE_OPTION) {
+                                            println(chooser.selectedFile.absolutePath)
+                                        }
+                                    }
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            painterResource(Res.drawable.ic_modify),
+                                            modifier = Modifier,
+                                            contentDescription = "",
+                                            tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                        )
+
+                                        Text("更改")
+                                    }
+                                }
+                            }
+
+                            NormalCheckbox(
+                                checked = true,
+                                onCheckedChange = {
+
+                                },
+                                label = "以番剧名自动创建目录"
+                            )
+
+                            NormalCheckbox(
+                                checked = true,
+                                onCheckedChange = {
+
+                                },
+                                label = "仅下载种子文件"
+                            )
+
+
                         }
                     }
                 }

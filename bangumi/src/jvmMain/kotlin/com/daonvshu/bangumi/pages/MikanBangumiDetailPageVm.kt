@@ -47,6 +47,8 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
 
     val filterIsAllSelected = MutableStateFlow(false)
 
+    val showDownloadDialog = MutableStateFlow(false)
+
     data class SiteInfo(
         val name: String,
         val url: String,
