@@ -32,7 +32,18 @@ object MikanDataParseUtil {
 
                     val a = li.select("a")
                     val link = a.attr("href")
-                    val title = a.attr("title")
+                    var title = a.attr("title")
+
+                    if (title.isEmpty()) {
+                        val div = li.select("div")
+                        div.forEach { it ->
+                            val divTitle = it.attr("title")
+                            if (divTitle.isNotEmpty()) {
+                                title = divTitle
+                                return@forEach
+                            }
+                        }
+                    }
 
                     result.add(MikanDataRecord(
                         mikanId = bangumiId.toInt(),

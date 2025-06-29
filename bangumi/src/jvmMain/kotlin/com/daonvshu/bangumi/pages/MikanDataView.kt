@@ -107,7 +107,7 @@ fun SeasonFilter(vm: MikanDataViewVm) {
 @Composable
 fun WeekFilter(vm: MikanDataViewVm) {
     val selectedIndex by vm.weekDayFilter.collectAsStateWithLifecycle()
-    val days = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六", "剧场版", "OVA")
+    val days = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六", "MV", "OVA")
 
     TabNavBar(
         titles = days,
