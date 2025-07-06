@@ -33,6 +33,8 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-json:1.0.0-beta-2")
                 implementation("org.xerial:sqlite-jdbc:3.44.1.0")
                 implementation("io.github.mataku:middle-ellipsis-text:1.2.0")
+
+                implementation(files("src/libs/ProtocolCodecEngine-1.0.0.jar"))
             }
         }
     }
