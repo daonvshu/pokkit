@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
@@ -534,7 +535,13 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                 label = "仅下载种子文件"
                             )
 
-
+                            Button(
+                                onClick = {
+                                    vm.downloadSelectedLinks()
+                                },
+                            ) {
+                                Text("Test")
+                            }
                         }
                     }
                 }

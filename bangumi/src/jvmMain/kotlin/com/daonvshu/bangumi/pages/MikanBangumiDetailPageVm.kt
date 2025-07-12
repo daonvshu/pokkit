@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
+import com.daonvshu.shared.backendservice.BackendServiceException
+import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
+import com.daonvshu.shared.backendservice.sendToBackend
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.utils.ImageCacheLoader
@@ -20,33 +23,33 @@ data class TorrentLinkData(
 )
 
 class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
-
+    // 图片缓存
     val imageCache = MutableStateFlow<ImageBitmap?>(null)
-
+    // 介绍
     val summary = MutableStateFlow(data.summary)
-
+    // 官网
     val officialSite = MutableStateFlow(data.officialSite)
-
+    // 集数
     val eps = MutableStateFlow(data.eps)
-
+    // 当前番剧的下载链接列表
     var torrentLinkCaches = mutableListOf<TorrentLinkData>()
-
+    // 筛选后的下载链接列表
     val torrentFilteredLinks = MutableStateFlow(emptyList<MikanTorrentLinkCache>())
-
+    // 列表中的选项是否选中
     val itemChecked = MutableStateFlow(emptyList<Boolean>())
-
+    // 字幕组筛选列表
     val selectorDataFansubs = MutableStateFlow(emptyList<String>())
-
+    // 当前选择的字幕组
     val filterFansubIndex = MutableStateFlow(-1)
-
+    // 是否只显示简体字幕
     val filterGb = MutableStateFlow(false)
-
+    // 集数筛选列表
     val selectorDataEps = MutableStateFlow(emptyList<Int>())
-
+    // 当前选中的筛选集数
     val filterEps = MutableStateFlow(-1)
-
+    // 列表是否全部选中
     val filterIsAllSelected = MutableStateFlow(false)
-
+    // 是否显示下载对话框
     val showDownloadDialog = MutableStateFlow(false)
 
     data class SiteInfo(
@@ -145,6 +148,22 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         }
 
         itemChecked.value = torrentFilteredLinks.value.map { false }
+    }
+
+    fun downloadSelectedLinks() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                TorrentContentFetchRequest(
+                    torrentUrls = torrentFilteredLinks.value.filterIndexed { index, item ->
+                        return@filterIndexed itemChecked.value[index]
+                    }.map {
+                        it.downloadUrl
+                    }
+                ).sendToBackend()
+            } catch (e: BackendServiceException) {
+                println("backend error occur: ${e.message}")
+            }
+        }
     }
 
     private fun refreshUi() {

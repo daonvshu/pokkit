@@ -19,7 +19,7 @@ data class MikanTorrentLinkCache(
     val description: String,
     val eps: Int,
     val gb: Boolean,
-    val downloadUrl: String,
+    val downloadUrl: String, //种子文件的下载链接
     val updateTime: Long,
 )
 

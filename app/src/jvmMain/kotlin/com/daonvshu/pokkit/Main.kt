@@ -55,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.database.Databases
 
 object TrayIcon : Painter() {
@@ -162,6 +163,7 @@ fun main() = application {
         Window(
             onCloseRequest = {
                 isOpen = false
+                BackendService.close()
             },
             undecorated = true,
             resizable = true,
