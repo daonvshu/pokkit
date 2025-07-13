@@ -523,7 +523,7 @@ namespace QDataUtil {
 
     template<typename T, typename Property>
     inline DataKey<T, Property> *DataDumpInterface::findByRouter(const QString &router) const {
-        auto routerList = router.split(QLatin1String("."));
+        auto routerList = router.split(".");
         if (routerList.isEmpty()) {
             return nullptr;
         }
@@ -547,4 +547,4 @@ namespace QDataUtil {
     }
 }
 
-#define DATA_KEY(type, var, ...) QDataUtil::DataKey<type, ##__VA_ARGS__> var{QLatin1String(#var)}
+#define DATA_KEY(type, var, ...) QDataUtil::DataKey<type, ##__VA_ARGS__> var{#var}

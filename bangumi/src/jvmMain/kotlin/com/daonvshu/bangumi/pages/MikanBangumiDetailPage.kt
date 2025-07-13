@@ -352,6 +352,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                     modifier = Modifier.size(24.dp),
                     onClick = {
                         vm.showDownloadDialog.value = true
+                        vm.beginFetchSelectedLinks()
                     }
                 ) {
                     Icon(
@@ -535,12 +536,20 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                 label = "仅下载种子文件"
                             )
 
-                            Button(
-                                onClick = {
-                                    vm.downloadSelectedLinks()
-                                },
+                            Box(
+                                modifier = Modifier
+                                    .height(300.dp)
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
                             ) {
-                                Text("Test")
+                                val isFetching by vm.isTorrentFetching.collectAsStateWithLifecycle()
+                                if (isFetching) {
+                                    val fetchProgress by vm.torrentFetchProgress.collectAsStateWithLifecycle()
+                                    Text(fetchProgress)
+                                } else {
+
+                                }
                             }
                         }
                     }

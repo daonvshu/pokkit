@@ -2,6 +2,8 @@ package com.daonvshu.shared.backendservice
 
 import com.daonvshu.protocol.codec.CodecType
 import com.daonvshu.protocol.codec.annotations.Type
+import com.daonvshu.shared.settings.AppSettings
+import com.daonvshu.shared.utils.LogCollector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -11,14 +13,25 @@ import kotlinx.coroutines.launch
 import java.io.Closeable
 import java.io.FileNotFoundException
 import java.io.RandomAccessFile
+import kotlin.String
 
 @Type(id = 0, codec = CodecType.JSON)
 data class IdentifyAuthRequest(
     val role: String = "Pokkit/ReadChannel"
 )
 
+@Type(id = 1, codec = CodecType.JSON)
+data class ProxyInfoSync(
+    val proxyAddress: String,
+    val proxyPort: Int
+)
+
 inline fun<reified T : Any> T.sendToBackend() {
     BackendService.sendRaw(BackendService.dataHandler.codec.encode<T>(this))
+}
+
+fun SpecialIntCommand.sendToBackend() {
+    BackendService.sendRaw(BackendService.dataHandler.codec.encodeId(this.value))
 }
 
 object BackendService : Closeable {
@@ -44,9 +57,17 @@ object BackendService : Closeable {
         }
     }
 
+    fun updateProxyInfo() {
+        ProxyInfoSync(
+            proxyAddress = AppSettings.settings.general.proxyAddress,
+            proxyPort = AppSettings.settings.general.proxyPort,
+        ).sendToBackend()
+    }
+
     private fun tryCreatePipeIfNeeded() {
         if (readPipe != null && writePipe != null) return
         try {
+            LogCollector.addLog("try create connection to backend service...")
             readPipe = RandomAccessFile("""\\.\pipe\$PIPE_NAME""", "rw")
             writePipe = RandomAccessFile("""\\.\pipe\$PIPE_NAME""", "rw")
 
@@ -58,7 +79,7 @@ object BackendService : Closeable {
                     while (isActive) {
                         val bytesRead = readPipe?.read(buffer) ?: -1
                         if (bytesRead == -1) {
-                            println("pipe exit!")
+                            LogCollector.addLog("backend service disconnected!")
                             break
                         }
                         dataHandler.handle(buffer.copyOfRange(0, bytesRead))
@@ -69,9 +90,11 @@ object BackendService : Closeable {
                 }
                 readPipe = null
             }
+            updateProxyInfo()
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
-            throw BackendServiceException("服务连接失败！")
+            LogCollector.addLog("backend service not found!")
+            BackendDataObserver.backendServiceConnectError.value = "本地服务无法连接!"
         }
     }
 

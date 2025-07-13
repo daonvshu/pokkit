@@ -23,9 +23,18 @@ add_executable(${PROJECT_NAME}
     commanddatahandler.h
     commanddatahandler.cpp
 
+    providers/downloadserviceprovider.h
+    providers/downloadserviceprovider.cpp
+
+    providers/tasks/torrentcontentfetchtask.h
+    providers/tasks/torrentcontentfetchtask.cpp
+
     services/dumputil.h
     services/downloadservice.h
+
     utils/datakey.h
+    utils/globalenv.h
+    utils/globalenv.cpp
 
     ${QtServiceSrc_Win}
     ${QtSingleAppSrc_Win}

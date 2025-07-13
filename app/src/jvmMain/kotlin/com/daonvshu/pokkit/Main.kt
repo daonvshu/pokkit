@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -55,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.database.Databases
 
@@ -228,7 +231,7 @@ fun main() = application {
                         WindowDraggableArea {
                             AppWindowTitleBar(mainVm)
                         }
-                        App()
+                        App(mainVm)
                     }
                 }
             }
@@ -237,7 +240,7 @@ fun main() = application {
 }
 
 @Composable
-fun App() {
+fun App(vm: MainViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -252,5 +255,28 @@ fun App() {
             composable("pixiv") {
             }
         }
+    }
+
+    val showServiceError by vm.showServiceError.collectAsStateWithLifecycle()
+    if (showServiceError) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text("Service Error")
+            },
+            text = {
+                Text(BackendDataObserver.backendServiceConnectError.value)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        vm.showServiceError.value = false
+                        BackendDataObserver.backendServiceConnectError.value = ""
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }

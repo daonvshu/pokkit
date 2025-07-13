@@ -1,19 +1,23 @@
 package com.daonvshu.bangumi.pages
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
-import com.daonvshu.shared.backendservice.BackendServiceException
+import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
 import com.daonvshu.shared.backendservice.sendToBackend
+import com.daonvshu.shared.components.TreeNode
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.utils.ImageCacheLoader
 import com.daonvshu.shared.utils.LogCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -51,6 +55,33 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     val filterIsAllSelected = MutableStateFlow(false)
     // 是否显示下载对话框
     val showDownloadDialog = MutableStateFlow(false)
+    // 种子文件请求id
+    var currentTorrentRequestId = 0L
+    // 种子文件请求进度
+    val torrentFetchProgress = MutableStateFlow("")
+    // 种子请求中
+    val isTorrentFetching = MutableStateFlow(false)
+    // 种子信息
+    //val torrentFetchedData = mutableStateListOf<TreeNode>()
+
+    init {
+        BackendDataObserver.torrentContentFetchProgressUpdate.onEach { data ->
+            if (data != null) {
+                if (data.requestId == currentTorrentRequestId) {
+                    torrentFetchProgress.value = "下载中：${data.finishedCount}/${data.totalCount}"
+                }
+            }
+        }.launchIn(viewModelScope)
+
+        BackendDataObserver.torrentContentFetchResult.onEach { data ->
+            if (data != null) {
+                if (data.requestId == currentTorrentRequestId) {
+                    isTorrentFetching.value = false
+
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
 
     data class SiteInfo(
         val name: String,
@@ -150,20 +181,22 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         itemChecked.value = torrentFilteredLinks.value.map { false }
     }
 
+    fun beginFetchSelectedLinks() {
+        torrentFetchProgress.value = ""
+        isTorrentFetching.value = true
+        downloadSelectedLinks()
+    }
+
     fun downloadSelectedLinks() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                TorrentContentFetchRequest(
-                    torrentUrls = torrentFilteredLinks.value.filterIndexed { index, item ->
-                        return@filterIndexed itemChecked.value[index]
-                    }.map {
-                        it.downloadUrl
-                    }
-                ).sendToBackend()
-            } catch (e: BackendServiceException) {
-                println("backend error occur: ${e.message}")
+        currentTorrentRequestId = System.currentTimeMillis()
+        TorrentContentFetchRequest(
+            requestId = currentTorrentRequestId,
+            torrentUrls = torrentFilteredLinks.value.filterIndexed { index, item ->
+                return@filterIndexed itemChecked.value[index]
+            }.map {
+                it.downloadUrl
             }
-        }
+        ).sendToBackend()
     }
 
     private fun refreshUi() {

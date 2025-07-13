@@ -5,12 +5,15 @@
 
 #include "services/downloadservice.h"
 
+#include "datapublish.h"
+
+class DownloadServiceProvider;
 class IdentifyAuthConfirmedCallback {
 public:
     virtual void onReadChannelReady() = 0;
 };
 
-class CommandDataHandler : public QObject {
+class CommandDataHandler : public QObject, public DataPublishInterface {
     Q_OBJECT
 
 public:
@@ -25,7 +28,11 @@ private:
     IdentifyAuthConfirmedCallback* callback;
     protocol_codec::ProtocolCodecEngine codecEngine;
 
+    DownloadServiceProvider* downloadServiceProvider;
+
 private:
     void onIdentifyAuthRequest(const struct IdentifyAuthRequest& request);
-    void onTorrentContentFetchRequest(const TorrentContentFetchRequest& request);
+    void onProxyInfoSync(const struct ProxyInfoSync& request);
+
+    void publish(const std::function<QByteArray (protocol_codec::ProtocolCodecEngine &)> &) override;
 };
