@@ -5,6 +5,7 @@
 #include "providers/downloadserviceprovider.h"
 
 #include <qtimer.h>
+#include <qfile.h>
 
 using namespace protocol_codec;
 
@@ -37,7 +38,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     : QObject(parent)
     , callback(callback)
 {
-    codecEngine.frameDeclare("H(FAFE)S2CV(CRC16)E(FE)");
+    codecEngine.frameDeclare("H(FAFE)S4CV(CRC16)E(FE)");
     codecEngine.setVerifyFlags("SC");
 
     codecEngine.registerType<JsonCodec<IdentifyAuthRequest>>(this, &CommandDataHandler::onIdentifyAuthRequest);
@@ -46,6 +47,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     downloadServiceProvider = new DownloadServiceProvider(this, this);
     //request
     codecEngine.registerType<JsonCodec<TorrentContentFetchRequest>>(downloadServiceProvider, &DownloadServiceProvider::getTorrentContent);
+    //codecEngine.registerType<JsonCodec<TorrentContentFetchRequest>>(this, &CommandDataHandler::sendBufferTest);
     codecEngine.registerType<TorrentContentFetchCancelRequest>(downloadServiceProvider, &DownloadServiceProvider::getTorrentContentCancel);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
@@ -67,5 +69,18 @@ void CommandDataHandler::onProxyInfoSync(const ProxyInfoSync &request) {
 }
 
 void CommandDataHandler::publish(const std::function<QByteArray(protocol_codec::ProtocolCodecEngine &)> &getData) {
-    emit dataFeedback(getData(codecEngine));
+    auto buffer = getData(codecEngine);
+    emit dataFeedback(buffer);
+    //QFile file("test.bin");
+    //file.open(QIODevice::WriteOnly | QIODevice::Append);
+    //file.write(buffer);
+    //file.close();
+}
+
+void CommandDataHandler::sendBufferTest(const TorrentContentFetchRequest &request) {
+    QFile file("test.bin");
+    file.open(QIODevice::ReadOnly);
+    auto data = file.readAll();
+    emit dataFeedback(data);
+    file.close();
 }

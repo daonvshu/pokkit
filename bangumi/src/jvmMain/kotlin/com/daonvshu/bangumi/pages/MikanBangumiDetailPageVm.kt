@@ -1,6 +1,7 @@
 package com.daonvshu.bangumi.pages
 
-import androidx.compose.runtime.mutableStateListOf
+import CheckState
+import TreeNode
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,12 +9,13 @@ import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
+import com.daonvshu.shared.backendservice.TorrentContentFetchResult
 import com.daonvshu.shared.backendservice.sendToBackend
-import com.daonvshu.shared.components.TreeNode
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.utils.ImageCacheLoader
 import com.daonvshu.shared.utils.LogCollector
+import com.daonvshu.shared.utils.friendlySize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -24,6 +26,13 @@ import kotlinx.coroutines.withContext
 data class TorrentLinkData(
     val fansub: String,
     val torrent: MutableList<MikanTorrentLinkCache>
+)
+
+data class TorrentNodeData(
+    val linkUrl: String,
+    val torrentContent: String,
+    val filePath: String,
+    val itemSize: Long,
 )
 
 class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
@@ -60,9 +69,11 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     // 种子文件请求进度
     val torrentFetchProgress = MutableStateFlow("")
     // 种子请求中
-    val isTorrentFetching = MutableStateFlow(false)
+    val isTorrentFetching = MutableStateFlow(true)
     // 种子信息
-    //val torrentFetchedData = mutableStateListOf<TreeNode>()
+    val torrentFetchedData = MutableStateFlow<TreeNode<TorrentNodeData>?>(null)
+    // 下载总大小
+    val downloadSizeAll = MutableStateFlow(0L)
 
     init {
         BackendDataObserver.torrentContentFetchProgressUpdate.onEach { data ->
@@ -77,7 +88,8 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             if (data != null) {
                 if (data.requestId == currentTorrentRequestId) {
                     isTorrentFetching.value = false
-
+                    parseTorrentLinks(data)
+                    BackendDataObserver.torrentContentFetchResult.value = null
                 }
             }
         }.launchIn(viewModelScope)
@@ -199,6 +211,25 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         ).sendToBackend()
     }
 
+    fun reloadSelectedSize() {
+        downloadSizeAll.value = torrentFetchedData.value?.let { root ->
+            getCheckedData(root.children).sumOf { it.itemSize }
+        } ?: 0L
+    }
+
+    fun startDownloadSelectedTorrents() {
+        val nodes = torrentFetchedData.value?.children
+        if (nodes == null) {
+            return
+        }
+
+        val torrents = getCheckedData(nodes).map { it.linkUrl + ":" + it.filePath }
+        if (torrents.isEmpty()) {
+            return
+        }
+        println(torrents)
+    }
+
     private fun refreshUi() {
         summary.value = data.summary
         officialSite.value = data.officialSite
@@ -219,5 +250,60 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             result.add(SiteInfo(siteList[i].trim(), siteList[i + 1], siteList[i + 2]))
         }
         return result.sortedBy { it.type }
+    }
+
+    private fun parseTorrentLinks(data: TorrentContentFetchResult) {
+        val root = TreeNode<TorrentNodeData>("/", null)
+        data.data.forEach { content ->
+            content.linkData.filePaths.forEach { path ->
+                var folders = path.path.split("\\").drop(1)
+                if (folders.isEmpty()) {
+                    folders = listOf(path.path)
+                }
+                var current = root
+
+                for ((index, name) in folders.withIndex()) {
+                    val isFile = index == folders.lastIndex
+                    val displayName = if (isFile) "$name (${path.size.friendlySize()})" else name
+
+                    val existing = current.children.find { it.label == displayName }
+                    if (existing != null) {
+                        current = existing
+                        continue
+                    }
+
+                    val newNode = TreeNode(
+                        label = displayName,
+                        data = if (isFile) TorrentNodeData(
+                            linkUrl = content.linkUrl,
+                            torrentContent = content.torrentContent,
+                            filePath = path.path,
+                            itemSize = path.size
+                        ) else null
+                    )
+                    current.children.add(newNode)
+                    newNode.parent = current
+                    current = newNode
+                }
+            }
+        }
+        torrentFetchedData.value = root
+        reloadSelectedSize()
+    }
+
+    private fun <T> getCheckedData(children: List<TreeNode<T>>): List<T> {
+        val result = mutableListOf<T>()
+        fun dfs(node: TreeNode<T>) {
+            if (node.children.isNotEmpty()) {
+                node.children.forEach { dfs(it) }
+            } else {
+                if (node.checkState.value == CheckState.Checked) {
+                    node.data?.let { result.add(it) }
+                }
+            }
+        }
+
+        children.forEach { dfs(it) }
+        return result
     }
 }

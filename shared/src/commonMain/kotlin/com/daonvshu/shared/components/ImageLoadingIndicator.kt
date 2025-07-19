@@ -15,11 +15,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
+import com.daonvshu.shared.utils.PrimaryColors
 
 @Composable
 fun ImageLoadingIndicator(
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFF42A5F5),
+    color: Color = PrimaryColors.BLUE.color(),
     arcAngle: Float = 270f,        // 圆弧角度
     strokeWidthDp: Float = 4f,     // 圆弧粗细
     sizeDp: Int = 36               // 组件大小

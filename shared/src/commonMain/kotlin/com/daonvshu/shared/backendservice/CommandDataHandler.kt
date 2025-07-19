@@ -7,17 +7,17 @@ class CommandDataHandler {
     val codec = ProtocolCodecEngine()
 
     init {
-        codec.frameDeclare("H(FAFE)S2CV(CRC16)E(FE)")
+        codec.frameDeclare("H(FAFE)S4CV(CRC16)E(FE)")
         codec.setVerifyFlags("SC")
         codec.registerCallback(this)
 
         //request
-        codec.registerType<ProxyInfoSync>();
+        codec.registerType<ProxyInfoSync>()
         codec.registerType<IdentifyAuthRequest>()
         codec.registerType<TorrentContentFetchRequest>()
         //response
-        codec.registerType<TorrentContentFetchProgressUpdate>();
-        codec.registerType<TorrentContentFetchResult>();
+        codec.registerType<TorrentContentFetchProgressUpdate>()
+        codec.registerType<TorrentContentFetchResult>()
     }
 
     fun handle(data: ByteArray) {

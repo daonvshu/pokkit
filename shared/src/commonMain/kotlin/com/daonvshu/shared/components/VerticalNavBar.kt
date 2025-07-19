@@ -8,10 +8,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -68,7 +66,7 @@ fun VerticalNavBar(
                         colorFilter = ColorFilter.tint(selectedColor)
                     )
                 }
-                Spacer(Modifier.width(6.dp))
+                HSpacer(6.dp)
 
                 val selectedColor by animateColorAsState(if (i == selectedIndex) selectedColor else normalColor)
                 Text(

@@ -27,6 +27,7 @@ import com.daonvshu.shared.components.DividerOrientation
 import com.daonvshu.shared.components.LogBox
 import com.daonvshu.shared.components.VerticalNavBar
 import com.daonvshu.shared.utils.LogCollector
+import com.daonvshu.shared.utils.PrimaryColors
 
 @Composable
 fun BangumiMain() {
@@ -42,8 +43,8 @@ fun BangumiMain() {
                 modifier = Modifier.weight(1f),
                 items = menus,
                 selectedIndex = selectedIndex,
-                normalColor = Color(0xFF6B4D36),
-                selectedColor = Color(0xFF22A9C3),
+                normalColor = PrimaryColors.Text_Normal,
+                selectedColor = PrimaryColors.Text_Selected,
             ) {
                 viewModel.menuItemIndex.value = it
             }
@@ -53,7 +54,7 @@ fun BangumiMain() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp),
-                textColor = Color(0xFF22A9C3).copy(alpha = 0.4f),
+                textColor = PrimaryColors.Text_Selected.copy(alpha = 0.4f),
                 logList = logs
             )
         }
@@ -61,7 +62,7 @@ fun BangumiMain() {
         DashedDivider(
             modifier = Modifier.padding(vertical = 20.dp),
             orientation = DividerOrientation.Vertical,
-            color = Color(0xFFFF639C).copy(alpha = 0.5f)
+            color = PrimaryColors.MAGENTA.color(level = 5, alpha = 0.5f)
         )
 
         Box (

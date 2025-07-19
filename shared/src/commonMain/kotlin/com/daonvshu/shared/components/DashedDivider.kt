@@ -8,13 +8,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.daonvshu.shared.utils.PrimaryColors
 
 enum class DividerOrientation { Vertical, Horizontal }
 
 @Composable
 fun DashedDivider(
     orientation: DividerOrientation,
-    color: Color = Color(0xFFE0E0E0),
+    color: Color = PrimaryColors.GRAY.color(),
     dashLength: Dp = 6.dp,
     dashGap: Dp = 4.dp,
     thickness: Dp = 1.dp,

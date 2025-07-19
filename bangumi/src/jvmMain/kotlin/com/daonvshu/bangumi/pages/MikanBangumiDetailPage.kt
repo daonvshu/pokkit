@@ -1,5 +1,6 @@
 package com.daonvshu.bangumi.pages
 
+import TreeView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,10 +27,12 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -56,9 +58,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.daonvshu.bangumi.BangumiSharedVm
 import com.daonvshu.shared.components.FlowRowGroup
+import com.daonvshu.shared.components.HSpacer
+import com.daonvshu.shared.components.IconButtonSize
 import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.NormalCheckbox
+import com.daonvshu.shared.components.ShapeIconButton
+import com.daonvshu.shared.components.StandardButton
 import com.daonvshu.shared.components.TabNavBar
+import com.daonvshu.shared.components.VSpacer
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_back
 import com.daonvshu.shared.generated.resources.ic_download
@@ -66,6 +73,8 @@ import com.daonvshu.shared.generated.resources.ic_modify
 import com.daonvshu.shared.generated.resources.ic_refresh
 import com.daonvshu.shared.generated.resources.ic_type_info
 import com.daonvshu.shared.generated.resources.ic_type_play
+import com.daonvshu.shared.utils.PrimaryColors
+import com.daonvshu.shared.utils.friendlySize
 import io.github.mataku.middleellipsistext.MiddleEllipsisText
 import org.jetbrains.compose.resources.painterResource
 import java.io.File
@@ -124,34 +133,15 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                     modifier = Modifier.weight(1f),
                     text = vm.data.title,
                     fontSize = 20.sp,
-                    color = Color(0xFF6B4D36),
+                    color = PrimaryColors.Text_Normal,
                 )
 
-                IconButton(
-                    modifier = Modifier.size(24.dp),
-                    onClick = {
-                        //refresh data
-                        vm.updateDetail(true)
-                    }
-                ) {
-                    Icon(
-                        painterResource(Res.drawable.ic_refresh),
-                        contentDescription = "",
-                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
-                    )
+                ShapeIconButton(resource = Res.drawable.ic_refresh, color = PrimaryColors.Icon_Button_Primary) {
+                    vm.updateDetail(true)
                 }
 
-                IconButton(
-                    modifier = Modifier.size(24.dp),
-                    onClick = {
-                        sharedVm.navHost.value = "pop"
-                    }
-                ) {
-                    Icon(
-                        painterResource(Res.drawable.ic_back),
-                        contentDescription = "",
-                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
-                    )
+                ShapeIconButton(resource = Res.drawable.ic_back, color = PrimaryColors.Icon_Button_Primary) {
+                    sharedVm.navHost.value = "pop"
                 }
             }
 
@@ -172,7 +162,7 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                         text = summary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
-                        color = Color(0xFF98918F),
+                        color = PrimaryColors.Text_Secondary,
                     )
                 }
 
@@ -185,11 +175,13 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                 )
             }
 
-            Divider(color = Color(0xFF98918F).copy(alpha = 0.4f), thickness = 1.dp)
+            Divider(color = PrimaryColors.GRAY.color(level = 4, alpha = 0.4f), thickness = 1.dp)
 
-            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
-                fontSize = 14.sp, color = Color(0xFF6B4D36)
-            )) {
+            CompositionLocalProvider(
+                LocalTextStyle provides LocalTextStyle.current.copy(
+                    fontSize = 14.sp, color = PrimaryColors.Text_Normal
+                )
+            ) {
                 val eps by vm.eps.collectAsStateWithLifecycle()
                 Row(
                     modifier = Modifier.padding(top = 8.dp)
@@ -219,11 +211,11 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                                         }
                                     )
                                     .background(
-                                        Color(0xFF6B4D36).copy(alpha = 0.1f),
+                                        PrimaryColors.Button_Normal.copy(alpha = 0.1f),
                                         shape = RoundedCornerShape(6.dp)
                                     )
                             ) {
-                                Row (
+                                Row(
                                     modifier = Modifier.padding(start = 10.dp, end = 10.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -234,26 +226,28 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                                                 modifier = Modifier.height(16.dp),
                                                 painter = painterResource(Res.drawable.ic_type_play),
                                                 contentDescription = "onair",
-                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                                tint = PrimaryColors.Icon_Button,
                                             )
                                         }
+
                                         "resource" -> {
                                             Icon(
                                                 modifier = Modifier.height(16.dp),
                                                 painter = painterResource(Res.drawable.ic_download),
                                                 contentDescription = "resource",
-                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                                tint = PrimaryColors.Icon_Button,
                                             )
                                         }
+
                                         "info" -> {
                                             Icon(
                                                 modifier = Modifier.height(16.dp),
                                                 painter = painterResource(Res.drawable.ic_type_info),
                                                 contentDescription = "info",
-                                                tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                                tint = PrimaryColors.Icon_Button,
                                             )
                                         }
-                                     }
+                                    }
 
                                     Text(item.name)
                                 }
@@ -266,10 +260,12 @@ fun DetailInfoBox(vm: MikanBangumiDetailPageVm, sharedVm: BangumiSharedVm) {
                     val officialSite by vm.officialSite.collectAsStateWithLifecycle()
                     Text("官方网站：")
                     Text(buildAnnotatedString {
-                        withLink(LinkAnnotation.Url(
-                            officialSite,
-                            TextLinkStyles(style = SpanStyle(color = Color(0xFF22A9C3)))
-                        )) {
+                        withLink(
+                            LinkAnnotation.Url(
+                                officialSite,
+                                TextLinkStyles(style = SpanStyle(color = PrimaryColors.Text_Selected))
+                            )
+                        ) {
                             append(officialSite)
                         }
                     })
@@ -292,8 +288,8 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
             TabNavBar(
                 titles = fansubs,
                 selectedIndex = selectedIndex,
-                normalColor = Color(0xFF6B4D36),
-                selectedColor = Color(0xFF22A9C3),
+                normalColor = PrimaryColors.Text_Normal,
+                selectedColor = PrimaryColors.Text_Selected,
                 scrollable = true,
                 fontSize = 14.sp,
                 iconScale = 0.8f,
@@ -303,9 +299,11 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
             }
         }
 
-        CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
-            fontSize = 14.sp, color = Color(0xFF6B4D36)
-        )) {
+        CompositionLocalProvider(
+            LocalTextStyle provides LocalTextStyle.current.copy(
+                fontSize = 14.sp, color = PrimaryColors.Text_Normal
+            )
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -333,34 +331,15 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                     label = "简体"
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                HSpacer()
 
-                IconButton(
-                    modifier = Modifier.size(24.dp),
-                    onClick = {
-                        vm.updateTorrentLinks(true)
-                    }
-                ) {
-                    Icon(
-                        painterResource(Res.drawable.ic_refresh),
-                        contentDescription = "",
-                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
-                    )
+                ShapeIconButton(resource = Res.drawable.ic_refresh, color = PrimaryColors.Icon_Button_Primary) {
+                    vm.updateTorrentLinks(true)
                 }
 
-                IconButton(
-                    modifier = Modifier.size(24.dp),
-                    onClick = {
-                        vm.showDownloadDialog.value = true
-                        vm.beginFetchSelectedLinks()
-                    }
-                ) {
-                    Icon(
-                        painterResource(Res.drawable.ic_download),
-                        modifier = Modifier,
-                        contentDescription = "",
-                        tint = Color(0xFFFF639C).copy(alpha = 0.4f),
-                    )
+                ShapeIconButton(resource = Res.drawable.ic_download, color = PrimaryColors.Icon_Button_Primary) {
+                    vm.showDownloadDialog.value = true
+                    vm.beginFetchSelectedLinks()
                 }
             }
 
@@ -392,7 +371,7 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            VSpacer(4.dp)
 
             val torrentFilteredLinks by vm.torrentFilteredLinks.collectAsStateWithLifecycle()
             val itemChecked by vm.itemChecked.collectAsStateWithLifecycle()
@@ -439,20 +418,22 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
         Dialog(onDismissRequest = {
             vm.showDownloadDialog.value = false
         }) {
-            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(
-                fontSize = 14.sp, color = Color(0xFF6B4D36)
-            )) {
+            CompositionLocalProvider(
+                LocalTextStyle provides LocalTextStyle.current.copy(
+                    fontSize = 14.sp, color = PrimaryColors.Text_Normal
+                )
+            ) {
                 Surface(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White),
+                        .background(PrimaryColors.White),
                 ) {
                     Column {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
-                                .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
+                                .background(PrimaryColors.Bangumi_Body),
                         ) {
                             Text(
                                 "下载",
@@ -466,11 +447,12 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                         Column(
                             modifier = Modifier.padding(16.dp)
                         ) {
+                            val downloadSizeAll by vm.downloadSizeAll.collectAsStateWithLifecycle()
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text("总大小：")
-                                Text("0GB")
+                                Text(downloadSizeAll.friendlySize())
                             }
 
                             Row(
@@ -482,9 +464,10 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
+                                        .background(PrimaryColors.Bangumi_Body),
                                 ) {
-                                    Text("D:\\Bangumi",
+                                    Text(
+                                        "D:\\Bangumi",
                                         modifier = Modifier
                                             .align(Alignment.CenterStart)
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -512,7 +495,7 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                             painterResource(Res.drawable.ic_modify),
                                             modifier = Modifier,
                                             contentDescription = "",
-                                            tint = Color(0xFFFF639C).copy(alpha = 0.4f),
+                                            tint = PrimaryColors.Icon_Button,
                                         )
 
                                         Text("更改")
@@ -541,14 +524,33 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                     .height(300.dp)
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFFFF639C).copy(alpha = 0.1f)),
+                                    .background(PrimaryColors.Bangumi_Body),
                             ) {
                                 val isFetching by vm.isTorrentFetching.collectAsStateWithLifecycle()
                                 if (isFetching) {
                                     val fetchProgress by vm.torrentFetchProgress.collectAsStateWithLifecycle()
                                     Text(fetchProgress)
                                 } else {
+                                    val root by vm.torrentFetchedData.collectAsStateWithLifecycle()
+                                    if (root != null) {
+                                        TreeView(
+                                            nodes = listOf(root!!),
+                                            iconHint = PrimaryColors.Icon_Button
+                                        ) {
+                                            vm.reloadSelectedSize()
+                                        }
+                                    }
+                                }
+                            }
 
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                StandardButton("下载", color = PrimaryColors.Button_Normal_Primary) {
+                                    vm.startDownloadSelectedTorrents()
                                 }
                             }
                         }

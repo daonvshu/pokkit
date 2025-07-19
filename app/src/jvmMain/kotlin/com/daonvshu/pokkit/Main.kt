@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,7 +58,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
+import com.daonvshu.shared.components.HSpacer
 import com.daonvshu.shared.database.Databases
+import com.daonvshu.shared.utils.PrimaryColors
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -103,8 +104,8 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
             verticalAlignment = Alignment.CenterVertically
         ) {
             viewModel.menuItems.forEachIndexed { i, item ->
-                val itemColor by animateColorAsState(if (i == selectedIndex) item.color else Color(0xFF4C3A28))
-                Spacer(Modifier.width(if (i == 0) 0.dp else 24.dp))
+                val itemColor by animateColorAsState(if (i == selectedIndex) item.color else PrimaryColors.Text_Normal)
+                HSpacer(if (i == 0) 0.dp else 24.dp)
                 Row(
                     modifier = Modifier
                         .clickable(
@@ -200,7 +201,7 @@ fun main() = application {
                             val squareColor = selectedColor.copy(alpha = 0.04f)
 
                             drawRect(
-                                color = Color.White,
+                                color = PrimaryColors.White,
                                 topLeft = Offset.Zero,
                                 size = size
                             )

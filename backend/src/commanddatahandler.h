@@ -35,4 +35,6 @@ private:
     void onProxyInfoSync(const struct ProxyInfoSync& request);
 
     void publish(const std::function<QByteArray (protocol_codec::ProtocolCodecEngine &)> &) override;
+
+    void sendBufferTest(const TorrentContentFetchRequest &request);
 };

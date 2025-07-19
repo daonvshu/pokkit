@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,7 +62,7 @@ fun TabNavBar(
                                 colorFilter = ColorFilter.tint(selectedColor)
                             )
                         }
-                        Spacer(Modifier.width(6.dp))
+                        HSpacer(6.dp)
 
                         val selectedColor by animateColorAsState(
                             if (index == selectedIndex) selectedColor else normalColor

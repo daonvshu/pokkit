@@ -14,10 +14,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.daonvshu.shared.utils.LogEntry
+import com.daonvshu.shared.utils.PrimaryColors
 
 @Composable
 fun LogBox(
-    textColor: Color = Color.White,
+    textColor: Color = PrimaryColors.White,
     modifier: Modifier = Modifier,
     logList: List<LogEntry>
 ) {

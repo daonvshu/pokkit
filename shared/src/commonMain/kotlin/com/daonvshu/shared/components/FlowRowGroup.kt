@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.datetime.format.Padding
+import com.daonvshu.shared.utils.PrimaryColors
 
 @Composable
 fun<T> FlowRowGroup(
@@ -38,10 +38,10 @@ fun<T> FlowRowGroup(
     itemHeight: Dp = 28.dp,
     fontSize: TextUnit = 16.sp,
     padding: Dp = 10.dp,
-    normalTextColor: Color = Color(0xFF6B4D36),
-    selectedTextColor: Color = Color.White,
-    normalBackgroundColor: Color = Color(0xFF6B4D36).copy(alpha = 0.1f),
-    selectedBackgroundColor: Color = Color(0xFF6B4D36),
+    normalTextColor: Color = PrimaryColors.Text_Normal,
+    selectedTextColor: Color = PrimaryColors.White,
+    normalBackgroundColor: Color = PrimaryColors.Button_Normal.copy(alpha = 0.1f),
+    selectedBackgroundColor: Color = PrimaryColors.Button_Normal,
     onClicked : (Int, T) -> Unit,
 ) {
     Row (

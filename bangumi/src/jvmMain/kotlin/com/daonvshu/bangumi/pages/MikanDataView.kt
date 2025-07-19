@@ -41,6 +41,7 @@ import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_error_image
+import com.daonvshu.shared.utils.PrimaryColors
 import org.jetbrains.compose.resources.painterResource
 import java.util.Calendar
 
@@ -112,8 +113,8 @@ fun WeekFilter(vm: MikanDataViewVm) {
     TabNavBar(
         titles = days,
         selectedIndex = selectedIndex,
-        normalColor = Color(0xFF6B4D36),
-        selectedColor = Color(0xFF22A9C3),
+        normalColor = PrimaryColors.Text_Normal,
+        selectedColor = PrimaryColors.Text_Selected,
     ) {
         vm.weekDayFilter.value = it
     }
@@ -183,7 +184,7 @@ fun BangumiItemView(vm: MikanDataViewVm, sharedVm: BangumiSharedVm) {
                                     contentDescription = "thumbnail",
                                     contentScale = ContentScale.Crop,
                                     colorFilter = if (item.link.isEmpty())
-                                        ColorFilter.tint(Color(0xFFD9D9D9), blendMode = BlendMode.Color)
+                                        ColorFilter.tint(PrimaryColors.GRAY.color(), blendMode = BlendMode.Color)
                                     else null
                                 )
                             }
@@ -206,7 +207,7 @@ fun BangumiItemView(vm: MikanDataViewVm, sharedVm: BangumiSharedVm) {
                         fontSize = 14.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color(0xFF6B4D36),
+                        color = PrimaryColors.Text_Normal,
                     )
                 }
             }
