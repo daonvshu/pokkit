@@ -7,6 +7,7 @@ import com.daonvshu.shared.backendservice.bean.TorrentContentInfo
 @Type(id = 100, codec = CodecType.JSON)
 data class TorrentContentFetchRequest(
     val requestId: Long,
+    val torrentSrcNames: List<String>,
     val torrentUrls: List<String>
 )
 
@@ -25,4 +26,9 @@ data class TorrentContentFetchProgressUpdate(
 data class TorrentContentFetchResult(
     val requestId: Long,
     val data: List<TorrentContentInfo>,
+)
+
+@Type(id = 202, codec = CodecType.JSON)
+data class RequestOpenDir(
+    val paths: List<String>
 )

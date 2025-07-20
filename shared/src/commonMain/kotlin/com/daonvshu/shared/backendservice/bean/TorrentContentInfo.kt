@@ -5,17 +5,13 @@ data class TorrentInfoPathData(
     val size: Long,
 )
 
-data class TorrentInfoData(
-    val filePaths: List<TorrentInfoPathData>,
-    val name: String,
-    val invalid: Boolean,
-    val invalidType: Int,
-    val errorString: String,
-)
-
 data class TorrentContentInfo(
+    val srcName: String,
     val linkUrl: String,
     val linkName: String,
     val torrentContent: String,
-    val linkData: TorrentInfoData,
+    val invalid: Boolean,
+    val invalidType: Int,
+    val errorString: String,
+    val filePaths: List<TorrentInfoPathData>,
 )

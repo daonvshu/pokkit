@@ -20,41 +20,28 @@ struct TorrentInfoPathData : public DataDumpInterface {
 };
 
 struct TorrentInfoData : public DataDumpInterface {
-    DATA_KEY(QList<TorrentInfoPathData>, filePaths);
-    DATA_KEY(QString, name);
-    DATA_KEY(bool, invalid);
-    DATA_KEY(int, invalidType); //0: download fail, 1: invalid torrent, 2: already in download list
-    DATA_KEY(QString, errorString);
-
-    QList<DataReadInterface *> prop() override {
-        return {&filePaths, &name, &invalid, &invalidType, &errorString};
-    }
-
-    TorrentInfoData& operator=(const TorrentInfoData& other) {
-        filePaths = other.filePaths();
-        name = other.name();
-        invalid = other.invalid();
-        invalidType = other.invalidType();
-        errorString = other.errorString();
-        return *this;
-    }
-};
-
-struct TorrentHoldData : public DataDumpInterface {
+    DATA_KEY(QString, srcName);
     DATA_KEY(QString, linkUrl);
     DATA_KEY(QString, linkName);
     DATA_KEY(QString, torrentContent);
-    DATA_KEY(TorrentInfoData, linkData);
+    DATA_KEY(bool, invalid);
+    DATA_KEY(int, invalidType); //0: download fail, 1: invalid torrent, 2: already in download list
+    DATA_KEY(QString, errorString);
+    DATA_KEY(QList<TorrentInfoPathData>, filePaths);
 
     QList<DataReadInterface *> prop() override {
-        return { &linkUrl, &linkName, &torrentContent, &linkData };
+        return { &srcName, &linkUrl, &linkName, &torrentContent, &invalid, &invalidType, &errorString, &filePaths };
     }
 
-    TorrentHoldData& operator=(const TorrentHoldData& other) {
+    TorrentInfoData& operator=(const TorrentInfoData& other) {
+        srcName = other.srcName();
         linkUrl = other.linkUrl();
         linkName = other.linkName();
         torrentContent = other.torrentContent();
-        linkData = other.linkData();
+        invalid = other.invalid();
+        invalidType = other.invalidType();
+        errorString = other.errorString();
+        filePaths = other.filePaths();
         return *this;
     }
 };

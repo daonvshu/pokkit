@@ -18,7 +18,7 @@ class CancelableTorrentDownloadTask : public QObject, public QRunnable {
     Q_OBJECT
 
 public:
-    explicit CancelableTorrentDownloadTask(const QString& url, QObject *parent = nullptr);
+    explicit CancelableTorrentDownloadTask(const QString& srcName, const QString& url, QObject *parent = nullptr);
 
     void run() override;
 
@@ -32,7 +32,7 @@ private:
     QNetworkReply* reply = nullptr;
     QMutex mutex;
 
-    TorrentHoldData holdData;
+    TorrentInfoData holdData;
     BitTorrent::TorrentDescriptor torrentInfo;
 
     friend class TorrentContentFetchTask;
@@ -47,11 +47,11 @@ class TorrentContentFetchTask : public QObject {
 public:
     explicit TorrentContentFetchTask(QObject *parent = nullptr);
 
-    void start(const QStringList& urls);
+    void start(const QStringList& srcNames, const QStringList& urls);
 
     void cancelAll();
 
-    QList<TorrentHoldData> getData() const;
+    QList<TorrentInfoData> getData() const;
 
 signals:
     void progress(int finishedCount, int totalCount);
@@ -63,10 +63,10 @@ private:
     int totalSize = 0;
     int finishedCount = 0;
 
-    QList<TorrentHoldData> cacheData;
+    QList<TorrentInfoData> cacheData;
 
 private:
-    void submit(const QString& torrentUrl);
+    void submit(const QString& srcName, const QString& torrentUrl);
     void taskFinished(const QUrl& url, bool success);
     void tryStartNext();
 };

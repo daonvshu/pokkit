@@ -9,5 +9,8 @@ data class General(
     var proxyPort: Int = 7890,
     var proxyEnabled: Boolean = true,
 
+    var bangumiLastSavePath: String = "",
+    var autoCreateDir: Boolean = true,
+
     val mikan: MikanGeneral = MikanGeneral(),
 )

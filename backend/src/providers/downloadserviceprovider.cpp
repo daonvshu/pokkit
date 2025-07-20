@@ -38,7 +38,7 @@ void DownloadServiceProvider::getTorrentContent(const TorrentContentFetchRequest
         }
     });
 
-    task->start(request.torrentUrls());
+    task->start(request.torrentSrcNames(), request.torrentUrls());
 }
 
 void DownloadServiceProvider::getTorrentContentCancel() {

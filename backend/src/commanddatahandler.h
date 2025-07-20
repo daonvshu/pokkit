@@ -33,6 +33,7 @@ private:
 private:
     void onIdentifyAuthRequest(const struct IdentifyAuthRequest& request);
     void onProxyInfoSync(const struct ProxyInfoSync& request);
+    void onRequestOpenDir(const struct RequestOpenDir& request);
 
     void publish(const std::function<QByteArray (protocol_codec::ProtocolCodecEngine &)> &) override;
 

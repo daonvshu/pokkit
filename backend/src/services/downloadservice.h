@@ -10,11 +10,13 @@ struct TorrentContentFetchRequest: DataDumpProtocol<TorrentContentFetchRequest> 
     };
 
     DATA_KEY(qint64, requestId);
+    DATA_KEY(QStringList, torrentSrcNames);
     DATA_KEY(QStringList, torrentUrls);
 
     QList<DataReadInterface *> prop() override {
         return {
             &requestId,
+            &torrentSrcNames,
             &torrentUrls,
         };
     }
@@ -46,11 +48,25 @@ struct TorrentContentFetchResult: DataDumpProtocol<TorrentContentFetchResult> {
     };
 
     DATA_KEY(qint64, requestId);
-    DATA_KEY(QList<TorrentHoldData>, data);
+    DATA_KEY(QList<TorrentInfoData>, data);
 
     QList<DataReadInterface *> prop() override {
         return {
             &requestId, &data,
+        };
+    }
+};
+
+struct RequestOpenDir : DataDumpProtocol<RequestOpenDir> {
+    enum {
+        Type = 202
+    };
+
+    DATA_KEY(QStringList, paths);
+
+    QList<DataReadInterface *> prop() override {
+        return {
+            &paths,
         };
     }
 };

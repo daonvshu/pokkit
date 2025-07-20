@@ -16,7 +16,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 data class MikanTorrentLinkCache(
     val bindMikanId: Int,
     val fansub: String,
-    val description: String,
+    val description: String, //种子的文件名称，非原始名称
     val eps: Int,
     val gb: Boolean,
     val downloadUrl: String, //种子文件的下载链接

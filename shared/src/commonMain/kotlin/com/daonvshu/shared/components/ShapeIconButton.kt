@@ -45,7 +45,16 @@ data class ShapeIconButtonStyle(
     val alpha: Float = 0.6f,
     val size: IconButtonSize = IconButtonSize.MEDIUM,
     val shape: ShapeIconButtonType = ShapeIconButtonType.CIRCLE,
-)
+) {
+    fun merge(other: ShapeIconButtonStyle): ShapeIconButtonStyle {
+        return ShapeIconButtonStyle(
+            color = if (other.color != PrimaryColors.Unspecified) other.color else color,
+            alpha = other.alpha,
+            size = other.size,
+            shape = other.shape
+        )
+    }
+}
 
 val LocalShapeIconButtonStyle = compositionLocalOf {
     ShapeIconButtonStyle()
@@ -55,25 +64,35 @@ val LocalShapeIconButtonStyle = compositionLocalOf {
 @Composable
 fun ShapeIconButton(
     resource: DrawableResource,
-    color: PrimaryColors = PrimaryColors.GRAY,
+    color: PrimaryColors = PrimaryColors.Unspecified,
     alpha: Float = 0.6f,
     size: IconButtonSize = IconButtonSize.MEDIUM,
     shape: ShapeIconButtonType = ShapeIconButtonType.CIRCLE,
+    style: ShapeIconButtonStyle = LocalShapeIconButtonStyle.current,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val curStyle = style.merge(
+        ShapeIconButtonStyle(
+            color = color,
+            alpha = alpha,
+            size = size,
+            shape = shape
+        )
+    )
+
     val interactionSource = remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
 
     val iconColor by animateColorAsState(targetValue =
-        color.color(if (hovered) 5 else 6, alpha = alpha)
+        curStyle.color.color(if (hovered) 5 else 6, alpha = curStyle.alpha)
     )
 
     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
         IconButton(
             modifier = modifier
-                .size(size.size)
-                .clip(if (shape == ShapeIconButtonType.CIRCLE) CircleShape else RoundedCornerShape(6.dp))
+                .size(curStyle.size.size)
+                .clip(if (curStyle.shape == ShapeIconButtonType.CIRCLE) CircleShape else RoundedCornerShape(6.dp))
                 .hoverable(
                     enabled = onClick != null,
                     interactionSource = interactionSource,
@@ -87,22 +106,4 @@ fun ShapeIconButton(
             )
         }
     }
-}
-
-@Composable
-fun ShapeIconButton(
-    resource: DrawableResource,
-    style: ShapeIconButtonStyle = LocalShapeIconButtonStyle.current,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
-) {
-    ShapeIconButton(
-        resource = resource,
-        color = style.color,
-        alpha = style.alpha,
-        size = style.size,
-        shape = style.shape,
-        modifier = modifier,
-        onClick = onClick
-    )
 }

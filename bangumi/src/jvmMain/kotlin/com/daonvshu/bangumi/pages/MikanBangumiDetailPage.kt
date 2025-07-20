@@ -73,6 +73,7 @@ import com.daonvshu.shared.generated.resources.ic_modify
 import com.daonvshu.shared.generated.resources.ic_refresh
 import com.daonvshu.shared.generated.resources.ic_type_info
 import com.daonvshu.shared.generated.resources.ic_type_play
+import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.PrimaryColors
 import com.daonvshu.shared.utils.friendlySize
 import io.github.mataku.middleellipsistext.MiddleEllipsisText
@@ -455,6 +456,7 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                 Text(downloadSizeAll.friendlySize())
                             }
 
+                            val saveDir by vm.saveDir.collectAsStateWithLifecycle()
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -467,7 +469,7 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                         .background(PrimaryColors.Bangumi_Body),
                                 ) {
                                     Text(
-                                        "D:\\Bangumi",
+                                        saveDir,
                                         modifier = Modifier
                                             .align(Alignment.CenterStart)
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -480,10 +482,10 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                         val chooser = JFileChooser()
                                         chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
                                         chooser.isAcceptAllFileFilterUsed = false
-                                        //chooser.currentDirectory = File("")
+                                        chooser.currentDirectory = File(saveDir)
                                         val result = chooser.showOpenDialog(null)
                                         if (result == JFileChooser.APPROVE_OPTION) {
-                                            println(chooser.selectedFile.absolutePath)
+                                            vm.updateDownloadDir(chooser.selectedFile.absolutePath)
                                         }
                                     }
                                 ) {
@@ -503,18 +505,22 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                 }
                             }
 
+                            val autoCreateDir by vm.autoCreateDir.collectAsStateWithLifecycle()
                             NormalCheckbox(
-                                checked = true,
+                                checked = autoCreateDir,
                                 onCheckedChange = {
-
+                                    vm.autoCreateDir.value = it
+                                    AppSettings.settings.general.autoCreateDir = it
+                                    AppSettings.save()
                                 },
                                 label = "以番剧名自动创建目录"
                             )
 
+                            val onlyDownloadTorrent by vm.onlyDownloadTorrent.collectAsStateWithLifecycle()
                             NormalCheckbox(
-                                checked = true,
+                                checked = onlyDownloadTorrent,
                                 onCheckedChange = {
-
+                                    vm.onlyDownloadTorrent.value = it
                                 },
                                 label = "仅下载种子文件"
                             )
@@ -549,7 +555,12 @@ fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
                                     .padding(top = 8.dp),
                                 horizontalArrangement = Arrangement.End,
                             ) {
-                                StandardButton("下载", color = PrimaryColors.Button_Normal_Primary) {
+                                val downloadEnabled by vm.downloadEnabled.collectAsStateWithLifecycle()
+                                StandardButton(
+                                    text = "下载",
+                                    color = PrimaryColors.Button_Normal_Primary,
+                                    enabled = downloadEnabled,
+                                ) {
                                     vm.startDownloadSelectedTorrents()
                                 }
                             }

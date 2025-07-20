@@ -41,11 +41,25 @@ data class StandardButtonStyle(
     val textSize: TextUnit = 14.sp,
     val color: PrimaryColors = PrimaryColors.BLUE,
     val width: Dp = Dp.Unspecified,
-    val size: StandardButtonSize = StandardButtonSize.MEDIUM,
     val iconColorFollowText: Boolean = true,
     val iconTextSpace: Dp = 4.dp,
     val alignment: Alignment = Alignment.Center,
-)
+    val size: StandardButtonSize = StandardButtonSize.MEDIUM,
+    val enabled: Boolean = true,
+) {
+    fun merge(other: StandardButtonStyle): StandardButtonStyle {
+        return StandardButtonStyle(
+            textSize = if (other.textSize != TextUnit.Unspecified) other.textSize else textSize,
+            color = if (other.color != PrimaryColors.Unspecified) other.color else color,
+            width = if (other.width != Dp.Unspecified) other.width else width,
+            iconColorFollowText = other.iconColorFollowText,
+            iconTextSpace = if (other.iconTextSpace != Dp.Unspecified) other.iconTextSpace else iconTextSpace,
+            alignment = other.alignment,
+            size = other.size,
+            enabled = other.enabled,
+        )
+    }
+}
 
 val LocalStandardButtonStyle = compositionLocalOf {
     StandardButtonStyle()
@@ -54,28 +68,45 @@ val LocalStandardButtonStyle = compositionLocalOf {
 @Composable
 fun StandardButton(
     text: String,
-    textSize: TextUnit = 14.sp,
-    color: PrimaryColors = PrimaryColors.BLUE,
-    width: Dp = Dp.Unspecified,
     icon: DrawableResource? = null,
+    textSize: TextUnit = TextUnit.Unspecified,
+    color: PrimaryColors = PrimaryColors.Unspecified,
+    width: Dp = Dp.Unspecified,
     iconColorFollowText: Boolean = true,
-    iconTextSpace: Dp = 4.dp,
+    iconTextSpace: Dp = Dp.Unspecified,
     alignment: Alignment = Alignment.Center,
     size: StandardButtonSize = StandardButtonSize.MEDIUM,
+    enabled: Boolean = true,
+    style: StandardButtonStyle = LocalStandardButtonStyle.current,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    val clickable = onClick != null
+    val curStyle = style.merge(
+        StandardButtonStyle(
+            textSize = textSize,
+            color = color,
+            width = width,
+            iconColorFollowText = iconColorFollowText,
+            iconTextSpace = iconTextSpace,
+            alignment = alignment,
+            size = size,
+            enabled = enabled,
+        )
+    )
+
+    val clickable = onClick != null && curStyle.enabled
     val interactionSource = remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
 
-    val backgroundColor by animateColorAsState(color.color(
-        if (hovered) 5 else 6
-    ))
+    val backgroundColor by animateColorAsState(
+        curStyle.color.color(
+            if (!curStyle.enabled) 2 else if (hovered) 5 else 6
+        )
+    )
     Box(
         modifier = modifier
-            .width(width)
-            .height(size.height)
+            .width(curStyle.width)
+            .height(curStyle.size.height)
             .clip(RoundedCornerShape(6.dp))
             .clickable(clickable, onClick = onClick ?: {})
             .hoverable(
@@ -83,14 +114,14 @@ fun StandardButton(
                 interactionSource = interactionSource,
             )
             .background(backgroundColor),
-        contentAlignment = alignment
+        contentAlignment = curStyle.alignment
     ) {
         Row(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(horizontal = 12.dp)
                 .then(
-                    if (width != Dp.Unspecified) {
+                    if (curStyle.width != Dp.Unspecified) {
                         Modifier.fillMaxWidth()
                     } else {
                         Modifier
@@ -103,15 +134,15 @@ fun StandardButton(
                 Icon(
                     painter = painterResource(icon), // 加载图标
                     contentDescription = null,
-                    tint = if (iconColorFollowText) PrimaryColors.White else Color.Unspecified,
+                    tint = if (curStyle.iconColorFollowText) PrimaryColors.White else Color.Unspecified,
                 )
                 if (text.isNotBlank()) {
-                    HSpacer(iconTextSpace)
+                    HSpacer(curStyle.iconTextSpace)
                 }
             }
 
             TextStyleProvider(
-                fontSize = textSize
+                fontSize = curStyle.textSize
             ) {
                 Text(
                     text = text,
@@ -123,52 +154,50 @@ fun StandardButton(
 }
 
 @Composable
-fun StandardButton(
+fun StrokeButton(
     text: String,
     icon: DrawableResource? = null,
+    textSize: TextUnit = TextUnit.Unspecified,
+    color: PrimaryColors = PrimaryColors.Unspecified,
+    width: Dp = Dp.Unspecified,
+    iconColorFollowText: Boolean = true,
+    iconTextSpace: Dp = Dp.Unspecified,
+    alignment: Alignment = Alignment.Center,
+    size: StandardButtonSize = StandardButtonSize.MEDIUM,
+    enabled: Boolean = true,
     style: StandardButtonStyle = LocalStandardButtonStyle.current,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
-    StandardButton(
-        text = text,
-        textSize = style.textSize,
-        color = style.color,
-        width = style.width,
-        icon = icon,
-        iconColorFollowText = style.iconColorFollowText,
-        iconTextSpace = style.iconTextSpace,
-        alignment = style.alignment,
-        size = style.size,
-        modifier = modifier,
-        onClick = onClick
+    val curStyle = style.merge(
+        StandardButtonStyle(
+            textSize = textSize,
+            color = color,
+            width = width,
+            iconColorFollowText = iconColorFollowText,
+            iconTextSpace = iconTextSpace,
+            alignment = alignment,
+            size = size,
+            enabled = enabled,
+        )
     )
-}
 
-@Composable
-fun StrokeButton(
-    text: String,
-    textSize: TextUnit = 14.sp,
-    color: PrimaryColors = PrimaryColors.BLUE,
-    width: Dp = Dp.Unspecified,
-    icon: DrawableResource? = null,
-    iconColorFollowText: Boolean = true,
-    iconTextSpace: Dp = 4.dp,
-    alignment: Alignment = Alignment.Center,
-    size: StandardButtonSize = StandardButtonSize.MEDIUM,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-) {
-    val clickable = onClick != null
+    val clickable = onClick != null && curStyle.enabled
     val interactionSource = remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
 
-    val borderColor by animateColorAsState(if (hovered) color.color(5) else PrimaryColors.GRAY.color(5))
-    val textColor by animateColorAsState(if (hovered) color.color(5) else PrimaryColors.Black)
+    val borderColor by animateColorAsState(
+        if (!curStyle.enabled) curStyle.color.color(2)
+        else if (hovered) curStyle.color.color(5) else PrimaryColors.GRAY.color(5)
+    )
+    val textColor by animateColorAsState(
+        if (!curStyle.enabled) curStyle.color.color(2)
+        else if (hovered) curStyle.color.color(5) else PrimaryColors.Black
+    )
     Box(
         modifier = modifier
-            .width(width)
-            .height(size.height)
+            .width(curStyle.width)
+            .height(curStyle.size.height)
             .clip(RoundedCornerShape(6.dp))
             .clickable(clickable, onClick = onClick ?: {})
             .hoverable(
@@ -179,7 +208,7 @@ fun StrokeButton(
                 color = borderColor,
                 shape = RoundedCornerShape(6.dp),
             ),
-        contentAlignment = alignment
+        contentAlignment = curStyle.alignment
     ) {
         Row(
             modifier = Modifier
@@ -192,15 +221,15 @@ fun StrokeButton(
                 Icon(
                     painter = painterResource(icon), // 加载图标
                     contentDescription = null,
-                    tint = if (iconColorFollowText) textColor else Color.Unspecified,
+                    tint = if (curStyle.iconColorFollowText) textColor else Color.Unspecified,
                 )
                 if (text.isNotBlank()) {
-                    HSpacer(iconTextSpace)
+                    HSpacer(curStyle.iconTextSpace)
                 }
             }
 
             TextStyleProvider(
-                fontSize = textSize
+                fontSize = curStyle.textSize
             ) {
                 Text(
                     text = text,
@@ -209,27 +238,4 @@ fun StrokeButton(
             }
         }
     }
-}
-
-@Composable
-fun StrokeButton(
-    text: String,
-    icon: DrawableResource? = null,
-    style: StandardButtonStyle = LocalStandardButtonStyle.current,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-) {
-    StrokeButton(
-        text = text,
-        textSize = style.textSize,
-        color = style.color,
-        width = style.width,
-        icon = icon,
-        iconColorFollowText = style.iconColorFollowText,
-        iconTextSpace = style.iconTextSpace,
-        alignment = style.alignment,
-        size = style.size,
-        modifier = modifier,
-        onClick = onClick
-    )
 }

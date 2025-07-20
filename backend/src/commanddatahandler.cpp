@@ -6,6 +6,12 @@
 
 #include <qtimer.h>
 #include <qfile.h>
+#include <qfileinfo.h>
+#include <qprocess.h>
+#include <qdir.h>
+#include <QtConcurrent/QtConcurrent>
+
+#include <ShlObj.h>
 
 using namespace protocol_codec;
 
@@ -49,6 +55,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     codecEngine.registerType<JsonCodec<TorrentContentFetchRequest>>(downloadServiceProvider, &DownloadServiceProvider::getTorrentContent);
     //codecEngine.registerType<JsonCodec<TorrentContentFetchRequest>>(this, &CommandDataHandler::sendBufferTest);
     codecEngine.registerType<TorrentContentFetchCancelRequest>(downloadServiceProvider, &DownloadServiceProvider::getTorrentContentCancel);
+    codecEngine.registerType<JsonCodec<RequestOpenDir>>(this, &CommandDataHandler::onRequestOpenDir);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();
@@ -83,4 +90,51 @@ void CommandDataHandler::sendBufferTest(const TorrentContentFetchRequest &reques
     auto data = file.readAll();
     emit dataFeedback(data);
     file.close();
+}
+
+void CommandDataHandler::onRequestOpenDir(const RequestOpenDir &request) {
+    auto paths = request.paths();
+    if (paths.isEmpty()) {
+        return;
+    }
+    qInfo() << "open and select files:" << paths;
+
+    if (!SUCCEEDED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE))) {
+        return;
+    }
+
+    // 获取文件夹路径
+    QFileInfo firstFile(paths.first());
+    QString folderPath = firstFile.absolutePath().replace("/", "\\");
+
+    PIDLIST_ABSOLUTE folderPIDL = nullptr;
+    HRESULT hr = SHParseDisplayName((LPCWSTR)folderPath.utf16(), nullptr, &folderPIDL, 0, nullptr);
+    if (FAILED(hr) || !folderPIDL) {
+        CoUninitialize();
+        return;
+    }
+
+    // 创建文件PIDL数组
+    QList<PCUITEMID_CHILD> itemPIDLs;
+    for (const QString &filePath : paths) {
+        PIDLIST_ABSOLUTE filePIDL = nullptr;
+        hr = SHParseDisplayName((LPCWSTR)filePath.utf16(), nullptr, &filePIDL, 0, nullptr);
+        if (SUCCEEDED(hr) && filePIDL) {
+            itemPIDLs.append(ILFindLastID(filePIDL)); // 获取相对于文件夹的子ID
+        }
+    }
+
+    if (itemPIDLs.isEmpty()) {
+        CoTaskMemFree(folderPIDL);
+        CoUninitialize();
+        return;
+    }
+
+    // 打开资源管理器并选中指定文件
+    hr = SHOpenFolderAndSelectItems(folderPIDL, static_cast<UINT>(itemPIDLs.size()), itemPIDLs.data(), 0);
+
+    // 清理
+    CoTaskMemFree(folderPIDL);
+
+    CoUninitialize();
 }

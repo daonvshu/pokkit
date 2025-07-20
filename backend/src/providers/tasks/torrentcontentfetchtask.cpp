@@ -5,13 +5,14 @@
 #include <qeventloop.h>
 #include <qdir.h>
 
-CancelableTorrentDownloadTask::CancelableTorrentDownloadTask(const QString &url, QObject *parent)
+CancelableTorrentDownloadTask::CancelableTorrentDownloadTask(const QString& srcName, const QString &url, QObject *parent)
     : QObject(parent)
     , url(url)
 {
     setAutoDelete(false);
-    holdData.linkData().invalid = true;
-    holdData.linkData().invalidType = 0;
+    holdData.srcName = srcName;
+    holdData.invalid = true;
+    holdData.invalidType = 0;
 }
 
 void CancelableTorrentDownloadTask::run() {
@@ -51,7 +52,6 @@ void CancelableTorrentDownloadTask::run() {
         }
     }
 
-    auto& linkData = holdData.linkData();
     if (reply->error() == QNetworkReply::NoError) {
         auto sourceData = reply->readAll();
         holdData.torrentContent = QString::fromLatin1(sourceData.toBase64());
@@ -63,15 +63,15 @@ void CancelableTorrentDownloadTask::run() {
                 torrentInfo = content.value();
                 solveTrackers();
             } else {
-                linkData.invalidType = 1;
+                holdData.invalidType = 1;
                 errorString = content.error();
             }
         }
     } else {
         errorString = reply->errorString();
     }
-    linkData.invalid = !success;
-    linkData.errorString = errorString;
+    holdData.invalid = !success;
+    holdData.errorString = errorString;
     reply->deleteLater();
     manager->deleteLater();
 
@@ -100,10 +100,10 @@ void CancelableTorrentDownloadTask::solveTrackers() {
         TorrentInfoPathData pathData;
         pathData.path = torrentInfo.info()->filePath(i).toString();
         pathData.size = torrentInfo.info()->fileSize(i);
-        holdData.linkData().filePaths() << pathData;
+        holdData.filePaths() << pathData;
     }
     if (isExist) {
-        holdData.linkData().invalidType = 2;
+        holdData.invalidType = 2;
     }
 }
 
@@ -113,10 +113,10 @@ TorrentContentFetchTask::TorrentContentFetchTask(QObject *parent)
     threadPool.setMaxThreadCount(5);
 }
 
-void TorrentContentFetchTask::start(const QStringList &urls) {
+void TorrentContentFetchTask::start(const QStringList& srcNames, const QStringList &urls) {
     totalSize = urls.size();
-    for (const auto &url : urls) {
-        submit(url);
+    for (int i = 0; i < qMin(srcNames.size(), urls.size()); i++) {
+        submit(srcNames[i], urls[i]);
     }
 }
 
@@ -135,8 +135,8 @@ void TorrentContentFetchTask::cancelAll() {
     runningTasks.clear();
 }
 
-void TorrentContentFetchTask::submit(const QString &torrentUrl) {
-    auto task = new CancelableTorrentDownloadTask(torrentUrl);
+void TorrentContentFetchTask::submit(const QString& srcName, const QString &torrentUrl) {
+    auto task = new CancelableTorrentDownloadTask(srcName, torrentUrl);
     taskQueue.enqueue(task);
     connect(task, &CancelableTorrentDownloadTask::finished, this, &TorrentContentFetchTask::taskFinished);
 
@@ -163,7 +163,7 @@ void TorrentContentFetchTask::tryStartNext() {
     }
 }
 
-QList<TorrentHoldData> TorrentContentFetchTask::getData() const {
+QList<TorrentInfoData> TorrentContentFetchTask::getData() const {
     return cacheData;
 }
 

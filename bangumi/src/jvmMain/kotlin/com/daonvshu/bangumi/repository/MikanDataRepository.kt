@@ -144,6 +144,7 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
             else -> 1
         }
         LogCollector.addLog("fetch bangumi list info...")
+        //TODO: 跨季度可能无法获取，需要读取数据库第一个记录，或者通过起始时间计算季度
         val bgmItems = BgmListApi.apiService.getBangumiList(year, season)
         val target = bgmItems.items.firstOrNull { item ->
             item.sites.any {

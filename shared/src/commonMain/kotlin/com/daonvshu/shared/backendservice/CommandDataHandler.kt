@@ -18,6 +18,7 @@ class CommandDataHandler {
         //response
         codec.registerType<TorrentContentFetchProgressUpdate>()
         codec.registerType<TorrentContentFetchResult>()
+        codec.registerType<RequestOpenDir>()
     }
 
     fun handle(data: ByteArray) {

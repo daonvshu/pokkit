@@ -8,20 +8,25 @@ import androidx.lifecycle.viewModelScope
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.backendservice.BackendDataObserver
+import com.daonvshu.shared.backendservice.RequestOpenDir
 import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
 import com.daonvshu.shared.backendservice.TorrentContentFetchResult
 import com.daonvshu.shared.backendservice.sendToBackend
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
+import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.ImageCacheLoader
 import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.friendlySize
+import com.daonvshu.shared.utils.toValidSystemName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.Base64
 
 data class TorrentLinkData(
     val fansub: String,
@@ -29,6 +34,7 @@ data class TorrentLinkData(
 )
 
 data class TorrentNodeData(
+    val srcName: String,
     val linkUrl: String,
     val torrentContent: String,
     val filePath: String,
@@ -62,6 +68,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     val filterEps = MutableStateFlow(-1)
     // 列表是否全部选中
     val filterIsAllSelected = MutableStateFlow(false)
+
     // 是否显示下载对话框
     val showDownloadDialog = MutableStateFlow(false)
     // 种子文件请求id
@@ -74,6 +81,14 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     val torrentFetchedData = MutableStateFlow<TreeNode<TorrentNodeData>?>(null)
     // 下载总大小
     val downloadSizeAll = MutableStateFlow(0L)
+    // 保存位置
+    val saveDir = MutableStateFlow(AppSettings.settings.general.bangumiLastSavePath)
+    // 自动创建目录
+    val autoCreateDir = MutableStateFlow(AppSettings.settings.general.autoCreateDir)
+    // 仅下载种子文件
+    val onlyDownloadTorrent = MutableStateFlow(false)
+    // 是否可以点击下载
+    val downloadEnabled = MutableStateFlow(false)
 
     init {
         BackendDataObserver.torrentContentFetchProgressUpdate.onEach { data ->
@@ -201,13 +216,13 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
 
     fun downloadSelectedLinks() {
         currentTorrentRequestId = System.currentTimeMillis()
+        val selectedData = torrentFilteredLinks.value.filterIndexed { index, item ->
+            return@filterIndexed itemChecked.value[index]
+        }
         TorrentContentFetchRequest(
             requestId = currentTorrentRequestId,
-            torrentUrls = torrentFilteredLinks.value.filterIndexed { index, item ->
-                return@filterIndexed itemChecked.value[index]
-            }.map {
-                it.downloadUrl
-            }
+            torrentSrcNames = selectedData.map { it.description },
+            torrentUrls = selectedData.map { it.downloadUrl }
         ).sendToBackend()
     }
 
@@ -215,6 +230,16 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         downloadSizeAll.value = torrentFetchedData.value?.let { root ->
             getCheckedData(root.children).sumOf { it.itemSize }
         } ?: 0L
+
+        downloadEnabled.value = downloadSizeAll.value > 0 && saveDir.value.isNotEmpty()
+    }
+
+    fun updateDownloadDir(dir: String) {
+        saveDir.value = dir
+        AppSettings.settings.general.bangumiLastSavePath = dir
+        AppSettings.save()
+        downloadEnabled.value = downloadSizeAll.value > 0 && saveDir.value.isNotEmpty()
+        println(dir)
     }
 
     fun startDownloadSelectedTorrents() {
@@ -223,11 +248,32 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             return
         }
 
-        val torrents = getCheckedData(nodes).map { it.linkUrl + ":" + it.filePath }
+        val torrents = getCheckedData(nodes)
         if (torrents.isEmpty()) {
             return
         }
-        println(torrents)
+        println(torrents.map { it.srcName + ":" + it.linkUrl + ":" + it.filePath })
+        val torrentGroup = torrents.groupBy { it.linkUrl }.filter { (_, list) -> list.isNotEmpty() }
+        if (onlyDownloadTorrent.value) {
+            val saveDir = File(saveDir.value + if (autoCreateDir.value) "/${data.title.toValidSystemName()}" else "")
+            if (!saveDir.exists()) {
+                saveDir.mkdirs()
+            }
+            val saveFiles = mutableListOf<String>()
+            torrentGroup.forEach { (_, torrents) ->
+                val saveFile = File(saveDir, torrents.first().srcName.toValidSystemName() + ".torrent")
+                try {
+                    saveFile.writeBytes(Base64.getDecoder().decode(torrents.first().torrentContent))
+                    saveFiles.add(saveFile.absolutePath)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            if (saveFiles.isNotEmpty()) {
+                RequestOpenDir(saveFiles).sendToBackend()
+            }
+            showDownloadDialog.value = false
+        }
     }
 
     private fun refreshUi() {
@@ -255,7 +301,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     private fun parseTorrentLinks(data: TorrentContentFetchResult) {
         val root = TreeNode<TorrentNodeData>("/", null)
         data.data.forEach { content ->
-            content.linkData.filePaths.forEach { path ->
+            content.filePaths.forEach { path ->
                 var folders = path.path.split("\\").drop(1)
                 if (folders.isEmpty()) {
                     folders = listOf(path.path)
@@ -275,6 +321,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                     val newNode = TreeNode(
                         label = displayName,
                         data = if (isFile) TorrentNodeData(
+                            srcName = content.srcName,
                             linkUrl = content.linkUrl,
                             torrentContent = content.torrentContent,
                             filePath = path.path,

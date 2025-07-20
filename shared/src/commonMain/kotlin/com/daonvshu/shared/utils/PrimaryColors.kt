@@ -21,6 +21,8 @@ enum class PrimaryColors(val value: Long) {
     MAGENTA(0xFFF5319D),
     BROWN(0xFF6B4D36),
     GRAY(0xFF86909c),
+
+    Unspecified(0x000000)
     ;
 
     fun color(level: Int = 6, alpha: Float = 1f): Color {
