@@ -17,6 +17,7 @@ import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.ImageCacheLoader
 import com.daonvshu.shared.utils.LogCollector
+import com.daonvshu.shared.utils.dir
 import com.daonvshu.shared.utils.friendlySize
 import com.daonvshu.shared.utils.toValidSystemName
 import kotlinx.coroutines.Dispatchers
@@ -255,13 +256,10 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         println(torrents.map { it.srcName + ":" + it.linkUrl + ":" + it.filePath })
         val torrentGroup = torrents.groupBy { it.linkUrl }.filter { (_, list) -> list.isNotEmpty() }
         if (onlyDownloadTorrent.value) {
-            val saveDir = File(saveDir.value + if (autoCreateDir.value) "/${data.title.toValidSystemName()}" else "")
-            if (!saveDir.exists()) {
-                saveDir.mkdirs()
-            }
+            val subSaveDir = saveDir.value.dir(autoCreateDir.value, data.title)
             val saveFiles = mutableListOf<String>()
             torrentGroup.forEach { (_, torrents) ->
-                val saveFile = File(saveDir, torrents.first().srcName.toValidSystemName() + ".torrent")
+                val saveFile = File(subSaveDir, torrents.first().srcName.toValidSystemName() + ".torrent")
                 try {
                     saveFile.writeBytes(Base64.getDecoder().decode(torrents.first().torrentContent))
                     saveFiles.add(saveFile.absolutePath)
