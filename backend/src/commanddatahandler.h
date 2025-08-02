@@ -21,6 +21,8 @@ public:
 
     void addBuffer(const QByteArray& data);
 
+    void listenTorrentUpdateStart();
+
 signals:
     void dataFeedback(const QByteArray& data);
 

@@ -3,6 +3,7 @@
 #include "dumputil.h"
 
 #include "providers/tasks/torrentfetchresult.h"
+#include "providers/tasks/torrentdownloadinfo.h"
 
 struct TorrentContentFetchRequest: DataDumpProtocol<TorrentContentFetchRequest> {
     enum {
@@ -67,6 +68,22 @@ struct RequestOpenDir : DataDumpProtocol<RequestOpenDir> {
     QList<DataReadInterface *> prop() override {
         return {
             &paths,
+        };
+    }
+};
+
+struct TorrentDownloadRequest : DataDumpProtocol<TorrentDownloadRequest> {
+    enum {
+        Type = 203
+    };
+
+    DATA_KEY(QString, savePath);
+    DATA_KEY(QList<TorrentDownloadData>, data);
+
+    QList<DataReadInterface *> prop() override {
+        return {
+            &savePath,
+            &data,
         };
     }
 };

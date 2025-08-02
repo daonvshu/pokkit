@@ -9,6 +9,7 @@ data class TorrentContentInfo(
     val srcName: String,
     val linkUrl: String,
     val linkName: String,
+    val torrentInfoHash: String,
     val torrentContent: String,
     val invalid: Boolean,
     val invalidType: Int,

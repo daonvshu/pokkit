@@ -94,6 +94,7 @@ void CancelableTorrentDownloadTask::solveTrackers() {
         }
     }
 
+    holdData.torrentInfoHash = torrentInfo.infoHash().v1().toString();
     holdData.linkUrl = url;
     holdData.linkName = torrentInfo.name();
     for (int i = 0; i < torrentInfo.info()->filesCount(); i++) {

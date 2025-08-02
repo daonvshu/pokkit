@@ -3,6 +3,7 @@ package com.daonvshu.shared.backendservice
 import com.daonvshu.protocol.codec.CodecType
 import com.daonvshu.protocol.codec.annotations.Type
 import com.daonvshu.shared.backendservice.bean.TorrentContentInfo
+import com.daonvshu.shared.backendservice.bean.TorrentDownloadInfo
 
 @Type(id = 100, codec = CodecType.JSON)
 data class TorrentContentFetchRequest(
@@ -31,4 +32,10 @@ data class TorrentContentFetchResult(
 @Type(id = 202, codec = CodecType.JSON)
 data class RequestOpenDir(
     val paths: List<String>
+)
+
+@Type(id = 203, codec = CodecType.JSON)
+data class TorrentDownloadRequest(
+    val savePath: String,
+    val data: List<TorrentDownloadInfo>
 )

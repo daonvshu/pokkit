@@ -56,6 +56,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     //codecEngine.registerType<JsonCodec<TorrentContentFetchRequest>>(this, &CommandDataHandler::sendBufferTest);
     codecEngine.registerType<TorrentContentFetchCancelRequest>(downloadServiceProvider, &DownloadServiceProvider::getTorrentContentCancel);
     codecEngine.registerType<JsonCodec<RequestOpenDir>>(this, &CommandDataHandler::onRequestOpenDir);
+    codecEngine.registerType<JsonCodec<TorrentDownloadRequest>>(downloadServiceProvider, &DownloadServiceProvider::beginDownload);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();
@@ -137,4 +138,8 @@ void CommandDataHandler::onRequestOpenDir(const RequestOpenDir &request) {
     CoTaskMemFree(folderPIDL);
 
     CoUninitialize();
+}
+
+void CommandDataHandler::listenTorrentUpdateStart() {
+    downloadServiceProvider->publishTorrentStatus();
 }

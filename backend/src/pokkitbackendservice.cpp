@@ -7,7 +7,9 @@
 #include "base/preferences.h"
 #include "base/net/downloadmanager.h"
 #include "base/net/proxyconfigurationmanager.h"
+#include "base/net/geoipmanager.h"
 #include "base/bittorrent/infohash.h"
+#include "base/torrentfileswatcher.h"
 
 #include <qdebug.h>
 
@@ -50,7 +52,11 @@ void PokkitBackendService::start() {
         SettingsStorage::initInstance();
         Preferences::initInstance();
         Net::ProxyConfigurationManager::initInstance();
+        Net::DownloadManager::initInstance();
+        Net::GeoIPManager::initInstance();
+        TorrentFilesWatcher::initInstance();
         BitTorrent::Session::initInstance();
+        commandDataHandler->listenTorrentUpdateStart();
     } catch (const RuntimeError& err) {
         qWarning() << "BitTorrent initialize failed! error:" << err.message();
     }

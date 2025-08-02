@@ -23,6 +23,7 @@ struct TorrentInfoData : public DataDumpInterface {
     DATA_KEY(QString, srcName);
     DATA_KEY(QString, linkUrl);
     DATA_KEY(QString, linkName);
+    DATA_KEY(QString, torrentInfoHash);
     DATA_KEY(QString, torrentContent);
     DATA_KEY(bool, invalid);
     DATA_KEY(int, invalidType); //0: download fail, 1: invalid torrent, 2: already in download list
@@ -30,13 +31,14 @@ struct TorrentInfoData : public DataDumpInterface {
     DATA_KEY(QList<TorrentInfoPathData>, filePaths);
 
     QList<DataReadInterface *> prop() override {
-        return { &srcName, &linkUrl, &linkName, &torrentContent, &invalid, &invalidType, &errorString, &filePaths };
+        return { &srcName, &linkUrl, &linkName, &torrentInfoHash, &torrentContent, &invalid, &invalidType, &errorString, &filePaths };
     }
 
     TorrentInfoData& operator=(const TorrentInfoData& other) {
         srcName = other.srcName();
         linkUrl = other.linkUrl();
         linkName = other.linkName();
+        torrentInfoHash = other.torrentInfoHash();
         torrentContent = other.torrentContent();
         invalid = other.invalid();
         invalidType = other.invalidType();

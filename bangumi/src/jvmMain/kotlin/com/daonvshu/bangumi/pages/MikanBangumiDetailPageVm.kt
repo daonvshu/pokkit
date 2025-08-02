@@ -11,7 +11,12 @@ import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.RequestOpenDir
 import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
 import com.daonvshu.shared.backendservice.TorrentContentFetchResult
+import com.daonvshu.shared.backendservice.TorrentDownloadRequest
+import com.daonvshu.shared.backendservice.bean.TorrentDownloadInfo
+import com.daonvshu.shared.backendservice.bean.TorrentDownloadPath
 import com.daonvshu.shared.backendservice.sendToBackend
+import com.daonvshu.shared.database.Databases
+import com.daonvshu.shared.database.schema.DownloadRecord
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.settings.AppSettings
@@ -37,9 +42,12 @@ data class TorrentLinkData(
 data class TorrentNodeData(
     val srcName: String,
     val linkUrl: String,
+    val linkName: String,
+    val torrentInfoHash: String,
     val torrentContent: String,
     val filePath: String,
     val itemSize: Long,
+    var ignored: Boolean = false, //仅用于下载时使用
 )
 
 class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
@@ -229,7 +237,7 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
 
     fun reloadSelectedSize() {
         downloadSizeAll.value = torrentFetchedData.value?.let { root ->
-            getCheckedData(root.children).sumOf { it.itemSize }
+            getAllNodeData(root.children).filter { !it.ignored }.sumOf { it.itemSize }
         } ?: 0L
 
         downloadEnabled.value = downloadSizeAll.value > 0 && saveDir.value.isNotEmpty()
@@ -249,14 +257,17 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             return
         }
 
-        val torrents = getCheckedData(nodes)
-        if (torrents.isEmpty()) {
+        val nodeData = getAllNodeData(nodes)
+        if (nodeData.isEmpty() || nodeData.all { it.ignored }) {
             return
         }
-        println(torrents.map { it.srcName + ":" + it.linkUrl + ":" + it.filePath })
-        val torrentGroup = torrents.groupBy { it.linkUrl }.filter { (_, list) -> list.isNotEmpty() }
+        //println(torrents.map { it.srcName + ":" + it.linkUrl + ":" + it.filePath })
+        val torrentGroup = nodeData
+            .groupBy { it.linkUrl }
+            .filter { (_, list) -> list.isNotEmpty() && list.any { !it.ignored } }
+
+        val subSaveDir = saveDir.value.dir(autoCreateDir.value, data.title)
         if (onlyDownloadTorrent.value) {
-            val subSaveDir = saveDir.value.dir(autoCreateDir.value, data.title)
             val saveFiles = mutableListOf<String>()
             torrentGroup.forEach { (_, torrents) ->
                 val saveFile = File(subSaveDir, torrents.first().srcName.toValidSystemName() + ".torrent")
@@ -270,8 +281,37 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             if (saveFiles.isNotEmpty()) {
                 RequestOpenDir(saveFiles).sendToBackend()
             }
-            showDownloadDialog.value = false
+        } else {
+            val torrentInfo = mutableListOf<TorrentDownloadInfo>()
+            torrentGroup.forEach { (_, torrents) ->
+                Databases.downloadRecordService.createRecord(
+                    DownloadRecord(
+                        linkedMikanId = data.mikanId,
+                        title = data.title,
+                        thumbnail = data.thumbnail,
+                        torrentInfoHash = torrents.first().torrentInfoHash,
+                        torrentData = torrents.first().torrentContent,
+                        torrentSrcName = torrents.first().srcName,
+                        torrentName = torrents.first().linkName,
+                        finished = false
+                    )
+                )
+                torrentInfo.add(TorrentDownloadInfo(
+                    content = torrents.first().torrentContent,
+                    paths = torrents.map { path ->
+                        TorrentDownloadPath(
+                            path = path.filePath,
+                            ignored = path.ignored
+                        )
+                    }
+                ))
+            }
+            TorrentDownloadRequest(
+                savePath = subSaveDir.absolutePath,
+                data = torrentInfo
+            ).sendToBackend()
         }
+        showDownloadDialog.value = false
     }
 
     private fun refreshUi() {
@@ -321,6 +361,8 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                         data = if (isFile) TorrentNodeData(
                             srcName = content.srcName,
                             linkUrl = content.linkUrl,
+                            linkName = content.linkName,
+                            torrentInfoHash = content.torrentInfoHash,
                             torrentContent = content.torrentContent,
                             filePath = path.path,
                             itemSize = path.size
@@ -336,14 +378,15 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         reloadSelectedSize()
     }
 
-    private fun <T> getCheckedData(children: List<TreeNode<T>>): List<T> {
-        val result = mutableListOf<T>()
-        fun dfs(node: TreeNode<T>) {
+    private fun getAllNodeData(children: List<TreeNode<TorrentNodeData>>): List<TorrentNodeData> {
+        val result = mutableListOf<TorrentNodeData>()
+        fun dfs(node: TreeNode<TorrentNodeData>) {
             if (node.children.isNotEmpty()) {
                 node.children.forEach { dfs(it) }
             } else {
-                if (node.checkState.value == CheckState.Checked) {
-                    node.data?.let { result.add(it) }
+                node.data?.let {
+                    it.ignored = node.checkState.value != CheckState.Checked
+                    result.add(it)
                 }
             }
         }

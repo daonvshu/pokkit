@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
 
     providers/tasks/torrentcontentfetchtask.h
     providers/tasks/torrentcontentfetchtask.cpp
+    providers/tasks/torrentdownloadinfo.h
+    providers/tasks/torrentdownloadinfo.cpp
 
     services/dumputil.h
     services/downloadservice.h

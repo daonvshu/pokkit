@@ -13,11 +13,18 @@ class DownloadServiceProvider : public QObject {
 public:
     explicit DownloadServiceProvider(DataPublishInterface* publishInterface, QObject *parent = nullptr);
 
+    void publishTorrentStatus();
+
     void getTorrentContent(const TorrentContentFetchRequest& request);
 
     void getTorrentContentCancel();
 
+    void beginDownload(const TorrentDownloadRequest& request);
+
 private:
     DataPublishInterface* publishInterface;
     QPointer<TorrentContentFetchTask> task;
+
+private slots:
+    void onTorrentUpdated(const QVector<BitTorrent::Torrent *> &torrents);
 };
