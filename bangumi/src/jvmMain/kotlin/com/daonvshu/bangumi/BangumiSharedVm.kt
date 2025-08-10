@@ -9,4 +9,8 @@ class BangumiSharedVm : ViewModel() {
     val navHost = MutableStateFlow("")
 
     var detailBangumiItem = MikanDataRecord()
+
+    var showOnlyDownloading = true
+    var showExtraDownloading = false
+    var targetDownloadId = -1
 }

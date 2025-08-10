@@ -60,6 +60,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();
+    codecEngine.registerType<TorrentStatusList, JsonCodec>();
 }
 
 void CommandDataHandler::addBuffer(const QByteArray &data) {

@@ -87,3 +87,15 @@ struct TorrentDownloadRequest : DataDumpProtocol<TorrentDownloadRequest> {
         };
     }
 };
+
+struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
+    enum {
+        Type = 204
+    };
+
+    DATA_KEY(QList<TorrentDisplayInfo>, status);
+
+    QList<DataReadInterface *> prop() override {
+        return { &status };
+    }
+};

@@ -64,7 +64,7 @@ object BackendService : Closeable {
         ).sendToBackend()
     }
 
-    private fun tryCreatePipeIfNeeded() {
+    fun tryCreatePipeIfNeeded() {
         if (readPipe != null && writePipe != null) return
         try {
             LogCollector.addLog("try create connection to backend service...")

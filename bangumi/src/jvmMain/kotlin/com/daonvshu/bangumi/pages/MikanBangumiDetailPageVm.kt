@@ -1,26 +1,18 @@
 package com.daonvshu.bangumi.pages
 
-import CheckState
-import TreeNode
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.bangumi.repository.MikanDataRepository
-import com.daonvshu.shared.backendservice.BackendDataObserver
-import com.daonvshu.shared.backendservice.RequestOpenDir
-import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
-import com.daonvshu.shared.backendservice.TorrentContentFetchResult
-import com.daonvshu.shared.backendservice.TorrentDownloadRequest
+import com.daonvshu.shared.backendservice.*
 import com.daonvshu.shared.backendservice.bean.TorrentDownloadInfo
 import com.daonvshu.shared.backendservice.bean.TorrentDownloadPath
-import com.daonvshu.shared.backendservice.sendToBackend
+import com.daonvshu.shared.components.CheckState
+import com.daonvshu.shared.components.TreeNode
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.schema.DownloadRecord
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.database.schema.MikanTorrentLinkCache
 import com.daonvshu.shared.settings.AppSettings
-import com.daonvshu.shared.utils.ImageCacheLoader
 import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.dir
 import com.daonvshu.shared.utils.friendlySize
@@ -30,9 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Base64
+import java.util.*
 
 data class TorrentLinkData(
     val fansub: String,
@@ -51,8 +42,6 @@ data class TorrentNodeData(
 )
 
 class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
-    // 图片缓存
-    val imageCache = MutableStateFlow<ImageBitmap?>(null)
     // 介绍
     val summary = MutableStateFlow(data.summary)
     // 官网
@@ -126,20 +115,6 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     )
 
     val sites = MutableStateFlow(parseSites(data.sites))
-
-    fun loadImage(url: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val imageData = try {
-                ImageCacheLoader.getImage(url, "mikan_image", MikanApi.apiService::getImage)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-            withContext(Dispatchers.Main) {
-                imageCache.value = imageData
-            }
-        }
-    }
 
     fun updateDetail(reload: Boolean = false) {
         if (!reload && data.bindBangumiId != -1) {

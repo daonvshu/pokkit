@@ -31,6 +31,8 @@ kotlin {
                 implementation("cafe.adriel.bonsai:bonsai-core:1.2.0")
                 implementation("cafe.adriel.bonsai:bonsai-file-system:1.2.0")
                 implementation("cafe.adriel.bonsai:bonsai-json:1.2.0")
+                implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+                implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
             }
         }
     }

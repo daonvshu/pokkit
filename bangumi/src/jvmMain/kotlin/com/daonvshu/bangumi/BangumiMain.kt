@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.daonvshu.bangumi.pages.DownloadPage
 import com.daonvshu.bangumi.pages.MikanBangumiDetailPage
 import com.daonvshu.bangumi.pages.MikanDataView
 import com.daonvshu.shared.components.DashedDivider
@@ -47,6 +48,13 @@ fun BangumiMain() {
                 selectedColor = PrimaryColors.Text_Selected,
             ) {
                 viewModel.menuItemIndex.value = it
+                sharedVm.navHost.value = when (it) {
+                    0 -> "dataView"
+                    1 -> "search"
+                    2 -> "setting"
+                    3 -> "download"
+                    else -> "dataView"
+                }
             }
 
             val logs by LogCollector.logs.collectAsState()
@@ -93,6 +101,9 @@ fun BangumiMain() {
                 }
                 composable("detail") {
                     MikanBangumiDetailPage(sharedVm)
+                }
+                composable("download") {
+                    DownloadPage(sharedVm)
                 }
             }
         }

@@ -26,6 +26,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,11 +57,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.disk.DiskCache
+import coil3.disk.directory
+import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.crossfade
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.components.HSpacer
 import com.daonvshu.shared.database.Databases
+import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.PrimaryColors
+import okhttp3.OkHttpClient
+import okio.Path
+import java.io.File
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -143,6 +155,34 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
 
 fun main() = application {
     Databases.init()
+
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .crossfade(true)
+            .components {
+                add(
+                    OkHttpNetworkFetcherFactory(
+                        callFactory = {
+                            OkHttpClient.Builder()
+                                .proxy(AppSettings.getProxy())
+                                .build()
+                        }
+                    )
+                )
+            }
+            .memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(".cache/image_cache"))
+                    .maxSizePercent(0.02)
+                    .build()
+            }
+            .build()
+    }
 
     var isOpen by remember { mutableStateOf(true) }
 

@@ -1,16 +1,8 @@
 package com.daonvshu.bangumi.pages
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -24,8 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,15 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.daonvshu.bangumi.BangumiSharedVm
+import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.shared.components.FlowRowGroup
-import com.daonvshu.shared.components.ImageLoadingIndicator
 import com.daonvshu.shared.components.TabNavBar
-import com.daonvshu.shared.generated.resources.Res
-import com.daonvshu.shared.generated.resources.ic_error_image
 import com.daonvshu.shared.utils.PrimaryColors
-import org.jetbrains.compose.resources.painterResource
-import java.util.Calendar
+import java.util.*
 
 @Composable
 fun MikanDataView(sharedVm: BangumiSharedVm) {
@@ -135,15 +125,6 @@ fun BangumiItemView(vm: MikanDataViewVm, sharedVm: BangumiSharedVm) {
         flingBehavior = flingBehavior
     ) {
         items(weekData) { item ->
-            val state = if (item.thumbnail.isEmpty()) {
-                MikanDataViewVm.ImageLoadState.ERROR
-            } else {
-                LaunchedEffect(item.thumbnail) {
-                    vm.loadImage(item.thumbnail)
-                }
-                vm.imageLoadState[item.thumbnail] ?: MikanDataViewVm.ImageLoadState.LOADING
-            }
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -159,36 +140,17 @@ fun BangumiItemView(vm: MikanDataViewVm, sharedVm: BangumiSharedVm) {
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        when (state) {
-                            MikanDataViewVm.ImageLoadState.LOADING -> {
-                                ImageLoadingIndicator()
-                            }
-
-                            MikanDataViewVm.ImageLoadState.ERROR -> {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(12.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
-                                    painter = painterResource(Res.drawable.ic_error_image),
-                                    contentDescription = "error",
-                                )
-                            }
-
-                            MikanDataViewVm.ImageLoadState.FINISHED -> {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(RoundedCornerShape(8.dp)),
-                                    bitmap = vm.imageCache[item.thumbnail]!!,
-                                    contentDescription = "thumbnail",
-                                    contentScale = ContentScale.Crop,
-                                    colorFilter = if (item.link.isEmpty())
-                                        ColorFilter.tint(PrimaryColors.GRAY.color(), blendMode = BlendMode.Color)
-                                    else null
-                                )
-                            }
-                        }
+                        AsyncImage(
+                            model = MikanApi.HOST + item.thumbnail,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentDescription = "thumbnail",
+                            contentScale = ContentScale.Crop,
+                            colorFilter = if (item.link.isEmpty())
+                                ColorFilter.tint(PrimaryColors.GRAY.color(), blendMode = BlendMode.Color)
+                            else null
+                        )
                     }
                     Text(
                         text = buildAnnotatedString {

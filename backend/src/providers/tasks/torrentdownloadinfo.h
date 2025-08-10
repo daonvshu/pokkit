@@ -58,8 +58,6 @@ struct TorrentDisplayInfo : DataDumpInterface {
     DATA_KEY(int, state); //TorrentStateType
     DATA_KEY(int, downloadState); //TorrentDownloadStateType
     DATA_KEY(QString, stateString);
-    DATA_KEY(QString, name);
-    DATA_KEY(QString, torrentName);
     DATA_KEY(QString, speed);
     DATA_KEY(QString, eta);
     DATA_KEY(QString, seeds);
@@ -68,13 +66,10 @@ struct TorrentDisplayInfo : DataDumpInterface {
     DATA_KEY(qreal, progress);
     DATA_KEY(QString, filePath);
     DATA_KEY(qint64, createTime);
-    DATA_KEY(QString, group);
-    DATA_KEY(qint64, timePoint);
-    DATA_KEY(QString, torrentLinkUrl);
 
     QList<DataReadInterface *> prop() override {
-        return { &torrentHash, &state, &downloadState, &stateString, &name, &torrentName, &speed, &eta, &seeds, &downloadedSize, &totalSize,
-                 &progress, &filePath, &createTime, &group, &timePoint, &torrentLinkUrl };
+        return { &torrentHash, &state, &downloadState, &stateString, &speed, &eta, &seeds, &downloadedSize, &totalSize,
+                 &progress, &filePath, &createTime };
     }
 
     TorrentDisplayInfo& operator=(const TorrentDisplayInfo& other) {
@@ -82,8 +77,6 @@ struct TorrentDisplayInfo : DataDumpInterface {
         state = other.state();
         downloadState = other.downloadState();
         stateString = other.stateString();
-        name = other.name();
-        torrentName = other.torrentName();
         speed = other.speed();
         eta = other.eta();
         seeds = other.seeds();
@@ -92,9 +85,6 @@ struct TorrentDisplayInfo : DataDumpInterface {
         progress = other.progress();
         filePath = other.filePath();
         createTime = other.createTime();
-        group = other.group();
-        timePoint = other.timePoint();
-        torrentLinkUrl = other.torrentLinkUrl();
         return *this;
     }
 
@@ -107,12 +97,4 @@ struct TorrentDisplayInfo : DataDumpInterface {
     static QString formatSeeds(int seeds, int totalSeeds);
 
     static QString formatSize(qlonglong size);
-};
-
-struct TorrentStatusList : public DataDumpInterface {
-    DATA_KEY(QList<TorrentDisplayInfo>, status);
-
-    QList<DataReadInterface *> prop() override {
-        return { &status };
-    }
 };

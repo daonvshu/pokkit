@@ -82,19 +82,6 @@ void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent
 
         auto state = TorrentDisplayInfo::translateState(torrent->state());
         displayInfo.torrentHash = torrent->infoHash().v1().toString();
-
-        //if (!cachedDownloadInfo.contains(displayInfo.torrentHash())) {
-        //    cachedDownloadInfo[displayInfo.torrentHash()] = DownloadingTorrentModel::readByHash(displayInfo.torrentHash());
-        //}
-        //const auto& downloadingInfo = cachedDownloadInfo[displayInfo.torrentHash()];
-        //if (downloadingInfo.getBangumiName().isEmpty()) {
-        //    displayInfo.group = QStringLiteral("[未分组]");
-        //    displayInfo.timePoint = 0;
-        //} else {
-        //    displayInfo.group = downloadingInfo.getBangumiName();
-        //    displayInfo.timePoint = downloadingInfo.getTimePoint();
-        //}
-
         displayInfo.state = (int)state.first;
 
         static QList<TorrentStateType> downloadingStates = {
@@ -118,8 +105,6 @@ void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent
         }
 
         displayInfo.stateString = state.second + (state.first == TorrentStateType::Error ? (torrent->error().isEmpty() ? QString() : (": " + torrent->error())) : QString());
-        displayInfo.name = torrent->name();
-        displayInfo.torrentName = ""; //downloadingInfo.getTorrentSrcName();
         displayInfo.speed = TorrentDisplayInfo::formatSpeed(state.first == TorrentStateType::Uploading ||
                                                             state.first == TorrentStateType::StalledUploading ? torrent->uploadPayloadRate() :
                                                             torrent->downloadPayloadRate());
@@ -133,10 +118,12 @@ void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent
         }
         displayInfo.filePath = torrent->savePath().toString();
         displayInfo.createTime = torrent->addedTime().toMSecsSinceEpoch();
-        displayInfo.torrentLinkUrl = ""; //downloadingInfo.getExternal() == 0 ? downloadingInfo.getTorrentLink() : QString();
 
         statusList.status().append(displayInfo);
     }
 
-    qDebug() << "torrent download status updated:" << statusList.dumpToJson();
+    //qDebug() << "torrent download status updated:" << statusList.dumpToJson();
+    publishInterface->publish([&] (ProtocolCodecEngine& codec) {
+        return codec.encode(statusList);
+    });
 }

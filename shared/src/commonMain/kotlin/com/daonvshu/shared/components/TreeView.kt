@@ -1,3 +1,5 @@
+package com.daonvshu.shared.components
+
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
@@ -19,7 +21,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.daonvshu.shared.components.HSpacer
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_arrow_down
 import com.daonvshu.shared.generated.resources.ic_arrow_right

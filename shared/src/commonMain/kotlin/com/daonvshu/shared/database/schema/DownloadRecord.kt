@@ -5,7 +5,9 @@ import com.daonvshu.shared.database.dbQuery
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 
 data class DownloadRecord(
     val id: Int = -1,
@@ -17,7 +19,21 @@ data class DownloadRecord(
     val torrentSrcName: String, //原链接名
     val torrentName: String, //解析链接名
     val finished: Boolean = false,
-)
+) {
+    companion object {
+        fun empty() = DownloadRecord(
+            id = -1,
+            linkedMikanId = -1,
+            title = "",
+            thumbnail = "",
+            torrentInfoHash = "",
+            torrentData = "",
+            torrentSrcName = "",
+            torrentName = "",
+            finished = false
+        )
+    }
+}
 
 class DownloadRecordService {
     object DownloadRecords : IntIdTable("downloadrecord") {
@@ -49,6 +65,30 @@ class DownloadRecordService {
                 it[torrentName] = record.torrentName
                 it[finished] = record.finished
             } [DownloadRecords.id].value
+        }
+    }
+
+    fun getAllRecords(): List<DownloadRecord> {
+        return dbQuery {
+            DownloadRecords.selectAll().map {
+                DownloadRecord(
+                    id = it[DownloadRecords.id].value,
+                    linkedMikanId = it[DownloadRecords.linkedMikanId],
+                    title = it[DownloadRecords.title],
+                    thumbnail = it[DownloadRecords.thumbnail],
+                    torrentInfoHash = it[DownloadRecords.torrentInfoHash],
+                    torrentData = it[DownloadRecords.torrentData],
+                    torrentSrcName = it[DownloadRecords.torrentSrcName],
+                    torrentName = it[DownloadRecords.torrentName],
+                    finished = it[DownloadRecords.finished]
+                )
+            }
+        }
+    }
+
+    fun makeFinished(recordId: Int) = dbQuery {
+        DownloadRecords.update({ DownloadRecords.id.eq(recordId) }) {
+            it[finished] = true
         }
     }
 }

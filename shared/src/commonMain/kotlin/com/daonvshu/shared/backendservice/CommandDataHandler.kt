@@ -20,6 +20,7 @@ class CommandDataHandler {
         codec.registerType<TorrentContentFetchProgressUpdate>()
         codec.registerType<TorrentContentFetchResult>()
         codec.registerType<RequestOpenDir>()
+        codec.registerType<TorrentStatusList>()
     }
 
     fun handle(data: ByteArray) {
@@ -35,5 +36,10 @@ class CommandDataHandler {
     @Subscribe
     fun onTorrentContentFetchResultReceived(result: TorrentContentFetchResult) {
         BackendDataObserver.torrentContentFetchResult.value = result
+    }
+
+    @Subscribe
+    fun onTorrentStatusListReceived(result: TorrentStatusList) {
+        BackendDataObserver.torrentStatusList.value = result
     }
 }
