@@ -45,3 +45,10 @@ data class TorrentDownloadRequest(
 data class TorrentStatusList(
     val status: List<TorrentDisplayInfo>
 )
+
+@Type(id = 205, codec = CodecType.JSON)
+data class TorrentPauseOrResumeRequest(
+    val isPause: Boolean,
+    val isAll: Boolean,
+    val torrentHash: List<String>
+)

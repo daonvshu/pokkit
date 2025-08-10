@@ -16,6 +16,7 @@ class CommandDataHandler {
         codec.registerType<IdentifyAuthRequest>()
         codec.registerType<TorrentContentFetchRequest>()
         codec.registerType<TorrentDownloadRequest>()
+        codec.registerType<TorrentPauseOrResumeRequest>()
         //response
         codec.registerType<TorrentContentFetchProgressUpdate>()
         codec.registerType<TorrentContentFetchResult>()

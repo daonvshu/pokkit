@@ -44,6 +44,7 @@ data class ShapeIconButtonStyle(
     val color: PrimaryColors = PrimaryColors.GRAY,
     val alpha: Float = 0.6f,
     val size: IconButtonSize = IconButtonSize.MEDIUM,
+    val iconSize: Dp = 16.dp,
     val shape: ShapeIconButtonType = ShapeIconButtonType.CIRCLE,
 ) {
     fun merge(other: ShapeIconButtonStyle): ShapeIconButtonStyle {
@@ -51,6 +52,7 @@ data class ShapeIconButtonStyle(
             color = if (other.color != PrimaryColors.Unspecified) other.color else color,
             alpha = other.alpha,
             size = other.size,
+            iconSize = if (other.iconSize != Dp.Unspecified) other.iconSize else iconSize,
             shape = other.shape
         )
     }
@@ -67,6 +69,7 @@ fun ShapeIconButton(
     color: PrimaryColors = PrimaryColors.Unspecified,
     alpha: Float = 0.6f,
     size: IconButtonSize = IconButtonSize.MEDIUM,
+    iconSize: Dp = Dp.Unspecified,
     shape: ShapeIconButtonType = ShapeIconButtonType.CIRCLE,
     style: ShapeIconButtonStyle = LocalShapeIconButtonStyle.current,
     modifier: Modifier = Modifier,
@@ -77,6 +80,7 @@ fun ShapeIconButton(
             color = color,
             alpha = alpha,
             size = size,
+            iconSize = iconSize,
             shape = shape
         )
     )
@@ -103,6 +107,7 @@ fun ShapeIconButton(
                 painterResource(resource),
                 contentDescription = "",
                 tint = iconColor,
+                modifier = Modifier.size(curStyle.iconSize),
             )
         }
     }

@@ -48,5 +48,6 @@ enum class PrimaryColors(val value: Long) {
 
         val Icon_Button = MAGENTA.color(level = 5, alpha = 0.4f)
         val Icon_Button_Primary = MAGENTA
+        val Icon_Button_Disabled = GRAY
     }
 }

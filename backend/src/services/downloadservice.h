@@ -99,3 +99,17 @@ struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
         return { &status };
     }
 };
+
+struct TorrentPauseOrResumeRequest : public DataDumpProtocol<TorrentPauseOrResumeRequest> {
+    enum {
+        Type = 205
+    };
+
+    DATA_KEY(bool, isPause);
+    DATA_KEY(bool, isAll);
+    DATA_KEY(QStringList, torrentHash);
+
+    QList<DataReadInterface *> prop() override {
+        return { &isPause, &isAll, &torrentHash };
+    }
+};

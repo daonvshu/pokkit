@@ -21,6 +21,8 @@ public:
 
     void beginDownload(const TorrentDownloadRequest& request);
 
+    void onTorrentPauseOrResumeRequest(const TorrentPauseOrResumeRequest& request);
+
 private:
     DataPublishInterface* publishInterface;
     QPointer<TorrentContentFetchTask> task;

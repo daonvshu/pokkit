@@ -1,5 +1,6 @@
 package com.daonvshu.bangumi.pages
 
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,8 +8,10 @@ import com.daonvshu.bangumi.BangumiSharedVm
 import com.daonvshu.bangumi.repository.DownloadDataRepository
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
+import com.daonvshu.shared.backendservice.TorrentPauseOrResumeRequest
 import com.daonvshu.shared.backendservice.bean.TorrentDisplayInfo
 import com.daonvshu.shared.backendservice.bean.TorrentDownloadStateType
+import com.daonvshu.shared.backendservice.sendToBackend
 import com.daonvshu.shared.components.TreeNode
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.schema.DownloadRecord
@@ -27,7 +30,9 @@ data class DownloadSrcRecordList(
 
 data class DownloadItemData(
     val record: DownloadRecord,
-    var data: TorrentDisplayInfo? = null
+    val data: MutableState<TorrentDisplayInfo?> = mutableStateOf(null),
+    val isDownloading: MutableState<Boolean> = mutableStateOf(false),
+    var removed: Boolean = false,
 )
 
 class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
@@ -43,55 +48,39 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
             }
             val statusMap = statusList.status.groupBy { it.torrentHash }
 
-            val oldIsExpanded = mutableMapOf<Int, Boolean>()
-            val oldStatus = mutableMapOf<String, TorrentDisplayInfo?>()
-            displayData.value?.let {
-                it.children.forEach { node ->
-                    oldIsExpanded[node.data!!.record.id] = node.isExpanded.value
-                    node.children.forEach { child ->
-                        if (child.data != null) {
-                            oldStatus[child.data!!.record.torrentInfoHash] = child.data!!.data
+            var isAnyRemoved = false
+            displayData.value?.children?.forEach { parentNode ->
+                parentNode.children.forEach childLoop@{ childNode ->
+                    val childData = childNode.data!!
+                    var status = statusMap[childData.record.torrentInfoHash]?.firstOrNull()
+                    if (status == null) {
+                        return@childLoop
+                    }
+                    val downloadState = TorrentDownloadStateType.of(status.downloadState)
+                    if (downloadState == TorrentDownloadStateType.Uploading) {
+                        if (!childData.record.finished) {
+                            Databases.downloadRecordService.makeFinished(childData.record.id)
+                        }
+                        if (sharedVm.showOnlyDownloading) {
+                            childData.removed = true
+                            isAnyRemoved = true
                         }
                     }
+                    childData.isDownloading.value = downloadState == TorrentDownloadStateType.Downloading
+                    childData.data.value = status
                 }
+            }
+            if (isAnyRemoved) {
+                val oldData = displayData.value!!
+                val rootNode = TreeNode<DownloadItemData>("/", null)
+                rootNode.children.addAll(oldData.children)
+                rootNode.children.forEach { parentNode ->
+                    parentNode.children.removeIf { it.data!!.removed }
+                }
+                rootNode.children.removeIf { it.children.isEmpty() }
+                displayData.value = rootNode
             }
 
-            val root = TreeNode<DownloadItemData>("/", null)
-            srcData.forEach srcLoop@{ srcRecordList ->
-                if (sharedVm.targetDownloadId != -1) {
-                    if (sharedVm.targetDownloadId != srcRecordList.id) {
-                        return@srcLoop
-                    }
-                }
-                val groupNode = TreeNode(srcRecordList.title, DownloadItemData(record = DownloadRecord.empty().copy(
-                    id = srcRecordList.id
-                )), isExpanded = mutableStateOf(oldIsExpanded[srcRecordList.id] ?: true))
-                srcRecordList.records.forEach recordLoop@{ record ->
-                    var status = statusMap[record.torrentInfoHash]?.firstOrNull()
-                    if (status == null) {
-                        status = oldStatus[record.torrentInfoHash]
-                        if (status == null) {
-                            return@recordLoop
-                        }
-                    }
-                    if (TorrentDownloadStateType.of(status.downloadState) == TorrentDownloadStateType.Uploading) {
-                        if (!record.finished) {
-                            Databases.downloadRecordService.makeFinished(record.id)
-                        }
-                    }
-                    if (sharedVm.showOnlyDownloading) {
-                        if (TorrentDownloadStateType.of(status.downloadState) != TorrentDownloadStateType.Downloading) {
-                            return@recordLoop
-                        }
-                    }
-                    val node = TreeNode("", DownloadItemData(record, status))
-                    groupNode.children.add(node)
-                }
-                if (groupNode.children.isNotEmpty()) {
-                    root.children.add(groupNode)
-                }
-            }
-            displayData.value = root
         }.launchIn(viewModelScope)
     }
 
@@ -147,7 +136,7 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
                             return@recordLoop
                         }
                     }
-                    val node = TreeNode("", DownloadItemData(record, status))
+                    val node = TreeNode("", DownloadItemData(record, mutableStateOf(status)))
                     groupNode.children.add(node)
                 }
                 if (groupNode.children.isNotEmpty()) {
@@ -156,5 +145,21 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
             }
             displayData.value = root
         }
+    }
+
+    fun requestPause(torrentHash: String) {
+        TorrentPauseOrResumeRequest(
+            isPause = true,
+            isAll = false,
+            torrentHash = listOf(torrentHash)
+        ).sendToBackend()
+    }
+
+    fun requestResume(torrentHash: String) {
+        TorrentPauseOrResumeRequest(
+            isPause = false,
+            isAll = false,
+            torrentHash = listOf(torrentHash)
+        ).sendToBackend()
     }
 }
