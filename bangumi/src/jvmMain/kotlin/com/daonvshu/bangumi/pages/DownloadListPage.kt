@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -31,6 +34,7 @@ import com.daonvshu.shared.backendservice.bean.TorrentDownloadStateType
 import com.daonvshu.shared.backendservice.bean.TorrentStateType
 import com.daonvshu.shared.components.*
 import com.daonvshu.shared.generated.resources.*
+import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.styles.TextStyleProvider
 import com.daonvshu.shared.utils.PrimaryColors
 import org.jetbrains.compose.resources.painterResource
@@ -40,14 +44,63 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
     val vm = viewModel { DownloadListPageVm(sharedVm) }
 
     LaunchedEffect(sharedVm.targetDownloadId) {
-        vm.reloadData()
+        sharedVm.targetDownloadId.collect {
+            vm.reloadData()
+        }
     }
 
     val root by vm.displayData.collectAsStateWithLifecycle()
     if (root != null) {
         TreeView2(
             nodes = root!!.children,
-            iconHint = PrimaryColors.Icon_Button
+            iconHint = PrimaryColors.Icon_Button,
+            parentLayout = { node ->
+                var showRemoveDlg by remember { mutableStateOf(false) }
+                Row {
+                    Text(
+                        text = node.label,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = PrimaryColors.Text_Normal,
+                    )
+
+                    HSpacer()
+
+                    ShapeIconButton(
+                        resource = Res.drawable.ic_resume,
+                        color = PrimaryColors.Icon_Button_Primary
+                    ) {
+                        vm.requestResumeAll()
+                    }
+
+                    ShapeIconButton(
+                        resource = Res.drawable.ic_pause,
+                        color = PrimaryColors.Icon_Button_Primary
+                    ) {
+                        vm.requestPauseAll()
+                    }
+
+                    ShapeIconButton(
+                        resource = Res.drawable.ic_delete,
+                        color = PrimaryColors.Icon_Button_Primary
+                    ) {
+                        showRemoveDlg = true
+                    }
+                }
+
+                if (showRemoveDlg) {
+                    TorrentRemoveDialog("删除所有任务") { removeSrc ->
+                        if (removeSrc != null) {
+                            vm.removeAll(node, removeSrc)
+                        }
+                        showRemoveDlg = false
+                    }
+                }
+            }
         ) { node ->
             val torrent = node.data as DownloadItemData
             Column {
@@ -138,7 +191,7 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                                 radius = 4f
                                             )
                                         }
-                                        Text(text = state!!.stateString)
+                                        Text(text = state!!.stateString, modifier = Modifier.width(40.dp))
                                     }
 
                                     HSpacer(2.dp)
@@ -150,6 +203,8 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                         Text(text = "${state!!.downloadedSize}/${state!!.totalSize}")
                                     }
                                     HSpacer()
+
+                                    var showRemoveDlg by remember { mutableStateOf(false) }
                                     if (isHover) {
                                         Row {
                                             val downloadType = TorrentDownloadStateType.of(state!!.downloadState)
@@ -157,14 +212,16 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                                 resource = Res.drawable.ic_play,
                                                 color = if (downloadType != TorrentDownloadStateType.Uploading) PrimaryColors.Icon_Button_Disabled else PrimaryColors.Icon_Button_Primary
                                             ) {
-
+                                                if (downloadType == TorrentDownloadStateType.Uploading) {
+                                                    vm.playTarget(torrent)
+                                                }
                                             }
 
                                             ShapeIconButton(
                                                 resource = if (downloadState == TorrentStateType.Paused || downloadState == TorrentStateType.Completed) Res.drawable.ic_resume else Res.drawable.ic_pause,
                                                 color = PrimaryColors.Icon_Button_Primary
                                             ) {
-                                                if (downloadState == TorrentStateType.Paused) {
+                                                if (downloadState == TorrentStateType.Paused || downloadState == TorrentStateType.Completed) {
                                                     vm.requestResume(torrent.record.torrentInfoHash)
                                                 } else {
                                                     vm.requestPause(torrent.record.torrentInfoHash)
@@ -175,22 +232,30 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                                 resource = Res.drawable.ic_delete,
                                                 color = PrimaryColors.Icon_Button_Primary
                                             ) {
-
+                                                showRemoveDlg = true
                                             }
 
                                             ShapeIconButton(
                                                 resource = Res.drawable.ic_export,
                                                 color = PrimaryColors.Icon_Button_Primary
                                             ) {
-
+                                                vm.exportTorrent(torrent)
                                             }
 
                                             ShapeIconButton(
                                                 resource = Res.drawable.ic_open_dir,
                                                 color = PrimaryColors.Icon_Button_Primary
                                             ) {
-
+                                                vm.openTarget(torrent)
                                             }
+                                        }
+                                    }
+                                    if (showRemoveDlg) {
+                                        TorrentRemoveDialog("删除任务") { removeSrc ->
+                                            if (removeSrc != null) {
+                                                vm.removeTarget(torrent, removeSrc)
+                                            }
+                                            showRemoveDlg = false
                                         }
                                     }
                                 }
@@ -198,7 +263,7 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                     val state by torrent.data
                                     LinearProgressIndicator(
                                         progress = state!!.progress.toFloat(),
-                                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                                        modifier = Modifier.fillMaxWidth().height(4.dp).padding(end = 4.dp),
                                         color = PrimaryColors.Bangumi_Primary,
                                         strokeCap = StrokeCap.Round,
                                     )
@@ -214,10 +279,79 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
 }
 
 @Composable
+private fun TorrentRemoveDialog(
+    title: String,
+    callback: (Boolean?) -> Unit
+) {
+    Dialog(onDismissRequest = {
+        callback(null)
+    }) {
+        CompositionLocalProvider(
+            LocalTextStyle provides LocalTextStyle.current.copy(
+                fontSize = 14.sp, color = PrimaryColors.Text_Normal
+            )
+        ) {
+            Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(PrimaryColors.White),
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .background(PrimaryColors.Bangumi_Body),
+                    ) {
+                        Text(
+                            title,
+                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .padding(horizontal = 16.dp),
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        var removeSrcFile by remember { mutableStateOf(AppSettings.settings.general.torrentDeleteWithSrcFile) }
+                        NormalCheckbox(
+                            checked = removeSrcFile,
+                            onCheckedChange = {
+                                removeSrcFile = it
+                                AppSettings.settings.general.torrentDeleteWithSrcFile = it
+                                AppSettings.save()
+                            },
+                            label = "删除下载的源文件"
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        StandardButton(
+                            text = "确定",
+                            color = PrimaryColors.Button_Normal_Primary,
+                        ) {
+                            callback(AppSettings.settings.general.torrentDeleteWithSrcFile)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun <T> TreeView2(
     modifier: Modifier = Modifier,
     nodes: List<TreeNode<T>>,
     iconHint: Color = Color.Unspecified,
+    parentLayout: @Composable (node: TreeNode<T>) -> Unit,
     childLayout: @Composable (node: TreeNode<T>) -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -261,16 +395,7 @@ fun <T> TreeView2(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (indent == 0) {
-                                Text(
-                                    text = node.label,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(end = 4.dp),
-                                    fontSize = 14.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = PrimaryColors.Text_Normal,
-                                )
+                                parentLayout(node)
                             } else {
                                 childLayout(node)
                             }

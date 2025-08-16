@@ -88,9 +88,38 @@ struct TorrentDownloadRequest : DataDumpProtocol<TorrentDownloadRequest> {
     }
 };
 
-struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
+struct TorrentPauseOrResumeRequest : public DataDumpProtocol<TorrentPauseOrResumeRequest> {
     enum {
         Type = 204
+    };
+
+    DATA_KEY(bool, isPause);
+    DATA_KEY(bool, isAll);
+    DATA_KEY(QStringList, torrentHash);
+
+    QList<DataReadInterface *> prop() override {
+        return { &isPause, &isAll, &torrentHash };
+    }
+};
+
+struct TorrentRemoveRequest : public DataDumpProtocol<TorrentRemoveRequest> {
+    enum {
+        Type = 205
+    };
+
+    DATA_KEY(bool, removeSrcFile);
+    DATA_KEY(QStringList, torrentHash);
+
+    QList<DataReadInterface *> prop() override {
+        return { &removeSrcFile, &torrentHash };
+    }
+};
+
+#define TorrentStatusRefreshRequest 206
+
+struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
+    enum {
+        Type = 301
     };
 
     DATA_KEY(QList<TorrentDisplayInfo>, status);
@@ -100,16 +129,15 @@ struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
     }
 };
 
-struct TorrentPauseOrResumeRequest : public DataDumpProtocol<TorrentPauseOrResumeRequest> {
+struct TorrentSpeedUpdated : public DataDumpProtocol<TorrentSpeedUpdated> {
     enum {
-        Type = 205
+        Type = 302
     };
 
-    DATA_KEY(bool, isPause);
-    DATA_KEY(bool, isAll);
-    DATA_KEY(QStringList, torrentHash);
+    DATA_KEY(QString, downloadSpeed);
+    DATA_KEY(QString, uploadSpeed);
 
     QList<DataReadInterface *> prop() override {
-        return { &isPause, &isAll, &torrentHash };
+        return { &downloadSpeed, &uploadSpeed };
     }
 };

@@ -41,7 +41,41 @@ data class TreeNode<T>(
     val isExpanded: MutableState<Boolean> = mutableStateOf(true),
     var parent: TreeNode<T>? = null,
     val id: String = UUID.randomUUID().toString(), // ✅ 唯一标识
-)
+) {
+    /** 递归深拷贝自己和所有子节点（可选过滤） */
+    fun deepCopy(removeEmptyGroup: Boolean, filter: ((TreeNode<T>) -> Boolean)? = null): TreeNode<T>? {
+        // 如果目标节点不需要保留（通过 filter 判断）
+        if (filter != null && !filter(this)) {
+            return null
+        }
+
+        // 深拷贝 children
+        val newChildren = children.mapNotNull { it.deepCopy(removeEmptyGroup, filter) }.toMutableList()
+
+        // 如果开启了删除空分组
+        if (removeEmptyGroup && newChildren.isEmpty()) {
+            return null
+        }
+
+        // 创建新的节点（parent 暂时设 null，稍后修复）
+        val newNode = TreeNode(
+            label = this.label,
+            data = this.data,
+            children = newChildren,
+            checkState = mutableStateOf(this.checkState.value),
+            isExpanded = mutableStateOf(this.isExpanded.value),
+            parent = null,
+            id = this.id // 保留原 id
+        )
+
+        // 设置子节点的 parent
+        newChildren.forEach { child ->
+            child.parent = newNode
+        }
+
+        return newNode
+    }
+}
 
 // ✅ 设置 parent 引用
 fun <T> setupTreeParentLinks(node: TreeNode<T>) {

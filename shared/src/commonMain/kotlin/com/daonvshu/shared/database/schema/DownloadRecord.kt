@@ -2,8 +2,11 @@ package com.daonvshu.shared.database.schema
 
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.dbQuery
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -90,5 +93,13 @@ class DownloadRecordService {
         DownloadRecords.update({ DownloadRecords.id.eq(recordId) }) {
             it[finished] = true
         }
+    }
+
+    fun removeRecord(recordId: Int) = dbQuery {
+        DownloadRecords.deleteWhere { DownloadRecords.id.eq(recordId) }
+    }
+
+    fun removeRecords(recordIds: List<Int>) = dbQuery {
+        DownloadRecords.deleteWhere { DownloadRecords.id.inList(recordIds) }
     }
 }

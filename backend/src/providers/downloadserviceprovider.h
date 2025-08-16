@@ -21,7 +21,11 @@ public:
 
     void beginDownload(const TorrentDownloadRequest& request);
 
+    void refreshAllTorrentsStatus();
+
     void onTorrentPauseOrResumeRequest(const TorrentPauseOrResumeRequest& request);
+
+    void onTorrentRemoveRequest(const TorrentRemoveRequest& request);
 
 private:
     DataPublishInterface* publishInterface;
@@ -29,4 +33,5 @@ private:
 
 private slots:
     void onTorrentUpdated(const QVector<BitTorrent::Torrent *> &torrents);
+    void onTorrentStatusUpdated();
 };

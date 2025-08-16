@@ -33,7 +33,7 @@ fun DownloadPage(sharedVm: BangumiSharedVm) {
 
             sharedVm.showOnlyDownloading = it == 1
             sharedVm.showExtraDownloading = it == 2
-            sharedVm.targetDownloadId = -1
+            sharedVm.targetDownloadId.value = -1
             when (it) {
                 0 -> vm.navHost.value = "bangumiView"
                 1 -> vm.navHost.value = "downloadListView"
@@ -64,7 +64,7 @@ fun DownloadPage(sharedVm: BangumiSharedVm) {
                 DownloadBangumiPage { item ->
                     sharedVm.showOnlyDownloading = false
                     sharedVm.showExtraDownloading = false
-                    sharedVm.targetDownloadId = item.bindId
+                    sharedVm.targetDownloadId.value = item.bindId
                     vm.navHost.value = "downloadListView"
                 }
             }

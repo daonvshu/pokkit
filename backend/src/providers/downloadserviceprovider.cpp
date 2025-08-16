@@ -1,5 +1,7 @@
 #include "downloadserviceprovider.h"
 
+#include "base/bittorrent/sessionstatus.h"
+
 #include <qdebug.h>
 
 DownloadServiceProvider::DownloadServiceProvider(DataPublishInterface* publishInterface, QObject *parent)
@@ -10,6 +12,7 @@ DownloadServiceProvider::DownloadServiceProvider(DataPublishInterface* publishIn
 
 void DownloadServiceProvider::publishTorrentStatus() {
     connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentsUpdated, this, &DownloadServiceProvider::onTorrentUpdated);
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::statsUpdated, this, &DownloadServiceProvider::onTorrentStatusUpdated);
 }
 
 void DownloadServiceProvider::getTorrentContent(const TorrentContentFetchRequest &request) {
@@ -74,17 +77,12 @@ void DownloadServiceProvider::beginDownload(const TorrentDownloadRequest& reques
     }
 }
 
-void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent *> &torrents) {
+void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent *>&) {
     TorrentStatusList statusList;
 
     QVector<BitTorrent::Torrent *> torrentsStopUploading;
     auto torrentAll = BitTorrent::Session::instance()->torrents();
     for (const auto& torrent : torrentAll) {
-        if (torrent->state() == BitTorrent::TorrentState::StoppedUploading) {
-            torrentsStopUploading.append(torrent);
-        }
-    }
-    for (const auto& torrent : torrents + torrentsStopUploading) {
         TorrentDisplayInfo displayInfo;
 
         auto state = TorrentDisplayInfo::translateState(torrent->state());
@@ -135,25 +133,41 @@ void DownloadServiceProvider::onTorrentUpdated(const QVector<BitTorrent::Torrent
     });
 }
 
+void DownloadServiceProvider::refreshAllTorrentsStatus() {
+    onTorrentUpdated({});
+}
+
 void DownloadServiceProvider::onTorrentPauseOrResumeRequest(const TorrentPauseOrResumeRequest &request) {
-    if (request.isAll()) {
-        if (request.isPause()) {
-            BitTorrent::Session::instance()->pause();
-        } else {
-            BitTorrent::Session::instance()->resume();
-        }
-    } else {
-        auto session = BitTorrent::Session::instance();
-        for (const auto& torrent : session->torrents()) {
-            auto torrentHash = torrent->infoHash().v1().toString();
-            if (request.torrentHash().contains(torrentHash)) {
-                if (request.isPause()) {
-                    torrent->stop();
-                } else {
-                    torrent->start();
-                }
-                break;
+    auto session = BitTorrent::Session::instance();
+    for (const auto& torrent : session->torrents()) {
+        auto torrentHash = torrent->infoHash().v1().toString();
+        if (request.isAll() || request.torrentHash().contains(torrentHash)) {
+            if (request.isPause()) {
+                torrent->stop();
+            } else {
+                torrent->start();
             }
+        }
+    }
+}
+
+void DownloadServiceProvider::onTorrentStatusUpdated() {
+    const auto& sessionStatus = BitTorrent::Session::instance()->status();
+    TorrentSpeedUpdated speedUpdated;
+    speedUpdated.downloadSpeed = TorrentDisplayInfo::formatSpeed(sessionStatus.payloadDownloadRate);
+    speedUpdated.uploadSpeed = TorrentDisplayInfo::formatSpeed(sessionStatus.payloadUploadRate);
+    publishInterface->publish([&] (ProtocolCodecEngine& codec) {
+        return codec.encode(speedUpdated);
+    });
+}
+
+void DownloadServiceProvider::onTorrentRemoveRequest(const TorrentRemoveRequest &request) {
+    auto session = BitTorrent::Session::instance();
+    for (const auto& torrent : session->torrents()) {
+        auto torrentHash = torrent->infoHash().v1().toString();
+        if (request.torrentHash().contains(torrentHash)) {
+            session->removeTorrent(torrent->id(), request.removeSrcFile() ?
+                BitTorrent::TorrentRemoveOption::RemoveContent : BitTorrent::TorrentRemoveOption::KeepContent);
         }
     }
 }

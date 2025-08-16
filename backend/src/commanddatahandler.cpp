@@ -58,10 +58,13 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     codecEngine.registerType<JsonCodec<RequestOpenDir>>(this, &CommandDataHandler::onRequestOpenDir);
     codecEngine.registerType<JsonCodec<TorrentDownloadRequest>>(downloadServiceProvider, &DownloadServiceProvider::beginDownload);
     codecEngine.registerType<JsonCodec<TorrentPauseOrResumeRequest>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentPauseOrResumeRequest);
+    codecEngine.registerType<JsonCodec<TorrentRemoveRequest>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentRemoveRequest);
+    codecEngine.registerType<TorrentStatusRefreshRequest>(downloadServiceProvider, &DownloadServiceProvider::refreshAllTorrentsStatus);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();
     codecEngine.registerType<TorrentStatusList, JsonCodec>();
+    codecEngine.registerType<TorrentSpeedUpdated, JsonCodec>();
 }
 
 void CommandDataHandler::addBuffer(const QByteArray &data) {

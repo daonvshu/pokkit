@@ -15,6 +15,7 @@ data class TorrentContentFetchRequest(
 
 enum class SpecialIntCommand(val value: Int) {
     TORRENT_CONTENT_FETCH_CANCEL(101),
+    TORRENT_STATUS_REFRESH_REQUEST(206),
 }
 
 @Type(id = 200, codec = CodecType.JSON)
@@ -42,13 +43,25 @@ data class TorrentDownloadRequest(
 )
 
 @Type(id = 204, codec = CodecType.JSON)
-data class TorrentStatusList(
-    val status: List<TorrentDisplayInfo>
-)
-
-@Type(id = 205, codec = CodecType.JSON)
 data class TorrentPauseOrResumeRequest(
     val isPause: Boolean,
     val isAll: Boolean,
     val torrentHash: List<String>
+)
+
+@Type(id = 205, codec = CodecType.JSON)
+data class TorrentRemoveRequest(
+    val removeSrcFile: Boolean,
+    val torrentHash: List<String>
+)
+
+@Type(id = 301, codec = CodecType.JSON)
+data class TorrentStatusList(
+    val status: List<TorrentDisplayInfo>
+)
+
+@Type(id = 302, codec = CodecType.JSON)
+data class TorrentSpeedUpdated(
+    val downloadSpeed: String,
+    val uploadSpeed: String
 )

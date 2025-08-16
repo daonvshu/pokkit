@@ -11,4 +11,6 @@ object BackendDataObserver {
     val torrentContentFetchResult = MutableStateFlow<TorrentContentFetchResult?>(null)
 
     val torrentStatusList = MutableStateFlow<TorrentStatusList?>(null)
+
+    val torrentSpeedUpdated = MutableStateFlow<TorrentSpeedUpdated?>(null)
 }

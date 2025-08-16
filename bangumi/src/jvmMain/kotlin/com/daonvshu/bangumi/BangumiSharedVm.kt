@@ -12,5 +12,5 @@ class BangumiSharedVm : ViewModel() {
 
     var showOnlyDownloading = true
     var showExtraDownloading = false
-    var targetDownloadId = -1
+    val targetDownloadId = MutableStateFlow(-1)
 }
