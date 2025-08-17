@@ -60,6 +60,7 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     codecEngine.registerType<JsonCodec<TorrentPauseOrResumeRequest>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentPauseOrResumeRequest);
     codecEngine.registerType<JsonCodec<TorrentRemoveRequest>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentRemoveRequest);
     codecEngine.registerType<TorrentStatusRefreshRequest>(downloadServiceProvider, &DownloadServiceProvider::refreshAllTorrentsStatus);
+    codecEngine.registerType<JsonCodec<TorrentContentFetch2Request>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentContentFetch2Request);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();

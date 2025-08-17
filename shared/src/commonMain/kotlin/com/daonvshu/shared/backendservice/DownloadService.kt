@@ -55,6 +55,13 @@ data class TorrentRemoveRequest(
     val torrentHash: List<String>
 )
 
+@Type(id = 207, codec = CodecType.JSON)
+data class TorrentContentFetch2Request(
+    val requestId: Long,
+    val type: Int, //0: torrent file 1: magnet url
+    val target: String, //torrent file path or magnet url
+)
+
 @Type(id = 301, codec = CodecType.JSON)
 data class TorrentStatusList(
     val status: List<TorrentDisplayInfo>

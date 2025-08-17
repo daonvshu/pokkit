@@ -141,6 +141,20 @@ catch (const lt::system_error &err)
     return nonstd::make_unexpected(QString::fromLocal8Bit(err.what()));
 }
 
+nonstd::expected<QByteArray, QString> BitTorrent::TorrentDescriptor::saveToBuffer() const {
+    try {
+        const lt::entry torrentEntry = lt::write_torrent_file(m_ltAddTorrentParams);
+        QByteArray buffer;
+        buffer.reserve(1024 * 1024);
+        lt::bencode(std::back_inserter(buffer), torrentEntry);
+        return buffer;
+    }
+    catch (const lt::system_error &err)
+    {
+        return nonstd::make_unexpected(QString::fromLocal8Bit(err.what()));
+    }
+}
+
 BitTorrent::TorrentDescriptor::TorrentDescriptor(lt::add_torrent_params ltAddTorrentParams)
     : m_ltAddTorrentParams {std::move(ltAddTorrentParams)}
 {

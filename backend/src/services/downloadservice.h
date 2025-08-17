@@ -117,6 +117,20 @@ struct TorrentRemoveRequest : public DataDumpProtocol<TorrentRemoveRequest> {
 
 #define TorrentStatusRefreshRequest 206
 
+struct TorrentContentFetch2Request : public DataDumpProtocol<TorrentContentFetch2Request> {
+    enum {
+        Type = 207
+    };
+
+    DATA_KEY(qint64, requestId);
+    DATA_KEY(int, type); //0: torrent file 1: magnet url
+    DATA_KEY(QString, target); //torrent file path or magnet url
+
+    QList<DataReadInterface *> prop() override {
+        return { &requestId, &type, &target };
+    }
+};
+
 struct TorrentStatusList : public DataDumpProtocol<TorrentStatusList> {
     enum {
         Type = 301

@@ -2,6 +2,7 @@
 
 #include "base/bittorrent/sessionstatus.h"
 
+#include <qfile.h>
 #include <qdebug.h>
 
 DownloadServiceProvider::DownloadServiceProvider(DataPublishInterface* publishInterface, QObject *parent)
@@ -13,6 +14,7 @@ DownloadServiceProvider::DownloadServiceProvider(DataPublishInterface* publishIn
 void DownloadServiceProvider::publishTorrentStatus() {
     connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentsUpdated, this, &DownloadServiceProvider::onTorrentUpdated);
     connect(BitTorrent::Session::instance(), &BitTorrent::Session::statsUpdated, this, &DownloadServiceProvider::onTorrentStatusUpdated);
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::metadataDownloaded, this, &DownloadServiceProvider::onMetadataDownloaded);
 }
 
 void DownloadServiceProvider::getTorrentContent(const TorrentContentFetchRequest &request) {
@@ -35,12 +37,7 @@ void DownloadServiceProvider::getTorrentContent(const TorrentContentFetchRequest
         qInfo() << QString("post progress: %1/%2").arg(finishedCount).arg(totalCount);
 
         if (finishedCount == totalCount) {
-            TorrentContentFetchResult fetchResult;
-            fetchResult.requestId = requestId;
-            fetchResult.data = task->getData();
-            publishInterface->publish([&] (ProtocolCodecEngine& codec) {
-                return codec.encode(fetchResult);
-            });
+            sendTorrentResult(requestId, task->getData());
             qInfo() << "fetch finished, post result...";
         }
     });
@@ -161,6 +158,32 @@ void DownloadServiceProvider::onTorrentStatusUpdated() {
     });
 }
 
+void DownloadServiceProvider::onMetadataDownloaded(const BitTorrent::TorrentInfo &metadata) {
+    TorrentInfoData data;
+    if (!metadata.isValid()) {
+        data.invalid = true;
+        data.invalidType = 1;
+    } else {
+        lastDescriptor.setTorrentInfo(metadata);
+        data.torrentInfoHash = lastDescriptor.infoHash().v1().toString();
+        data.linkName = lastDescriptor.name();
+        for (int i = 0; i < metadata.filesCount(); i++) {
+            TorrentInfoPathData pathData;
+            pathData.path = metadata.filePath(i).toString();
+            pathData.size = metadata.fileSize(i);
+            data.filePaths() << pathData;
+        }
+        auto result = lastDescriptor.saveToBuffer();
+        if (!result) {
+            data.invalidType = 2;
+        } else {
+            data.torrentContent = result.value().toBase64();
+            data.invalid = false;
+        }
+    }
+    sendTorrentResult(lastDescriptorRequestId, { data });
+}
+
 void DownloadServiceProvider::onTorrentRemoveRequest(const TorrentRemoveRequest &request) {
     auto session = BitTorrent::Session::instance();
     for (const auto& torrent : session->torrents()) {
@@ -171,3 +194,89 @@ void DownloadServiceProvider::onTorrentRemoveRequest(const TorrentRemoveRequest 
         }
     }
 }
+
+void DownloadServiceProvider::onTorrentContentFetch2Request(const TorrentContentFetch2Request &request) {
+
+    TorrentInfoData data;
+    data.invalid = true;
+    data.invalidType = 1;
+
+    if (request.type() == 0) {
+        //load from file
+        do {
+            QFile file(request.target());
+            data.srcName = file.fileName();
+            if (!file.open(QIODevice::ReadOnly)) {
+                break;
+            }
+            auto fileContent = file.readAll();
+            data.torrentContent = fileContent.toBase64();
+
+            auto content = BitTorrent::TorrentDescriptor::load(fileContent);
+            if (!content) {
+                break;
+            }
+            auto torrentInfo = content.value();
+            if (isTorrentExist(torrentInfo)) {
+                data.invalidType = 2;
+                break;
+            }
+
+            data.torrentInfoHash = torrentInfo.infoHash().v1().toString();
+            data.linkName = torrentInfo.name();
+            for (int i = 0; i < torrentInfo.info()->filesCount(); i++) {
+                TorrentInfoPathData pathData;
+                pathData.path = torrentInfo.info()->filePath(i).toString();
+                pathData.size = torrentInfo.info()->fileSize(i);
+                data.filePaths() << pathData;
+            }
+            data.invalid = false;
+        } while (false);
+        sendTorrentResult(request.requestId(), { data });
+    } else {
+        auto descr = BitTorrent::TorrentDescriptor::parse(request.target());
+        if (!descr) {
+            data.invalidType = 0;
+            sendTorrentResult(request.requestId(), { data });
+            return;
+        }
+
+        auto torrentInfo = descr.value();
+        if (isTorrentExist(torrentInfo)) {
+            data.invalidType = 2;
+            sendTorrentResult(request.requestId(), { data });
+            return;
+        }
+        lastDescriptor = torrentInfo;
+        lastDescriptorRequestId = request.requestId();
+        BitTorrent::Session::instance()->downloadMetadata(torrentInfo);
+    }
+}
+
+void DownloadServiceProvider::sendTorrentResult(qint64 requestId, const QList<TorrentInfoData> &data) {
+    TorrentContentFetchResult fetchResult;
+    fetchResult.requestId = requestId;
+    fetchResult.data = data;
+    publishInterface->publish([&] (ProtocolCodecEngine& codec) {
+        return codec.encode(fetchResult);
+    });
+}
+
+bool DownloadServiceProvider::isTorrentExist(const BitTorrent::TorrentDescriptor &descriptor) {
+    bool isExist = false;
+    auto id = BitTorrent::TorrentID::fromInfoHash(descriptor.infoHash());
+    if (BitTorrent::Session::instance()->isKnownTorrent(descriptor.infoHash())) {
+        auto torrent = BitTorrent::Session::instance()->findTorrent(descriptor.infoHash());
+        if (torrent) {
+            if (!torrent->isPrivate()) {
+                torrent->addTrackers(descriptor.trackers());
+                torrent->addUrlSeeds(descriptor.urlSeeds());
+            } {
+                //update trackers here!
+            }
+            isExist = true;
+        }
+    }
+    return isExist;
+}
+

@@ -42,6 +42,7 @@ import com.daonvshu.shared.generated.resources.ic_double_arrow_down
 import com.daonvshu.shared.styles.TextStyleProvider
 import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.PrimaryColors
+import com.daonvshu.shared.utils.rememberNavHostController
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -98,23 +99,10 @@ fun BangumiMain() {
                 .fillMaxHeight()
                 .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp)
         ) {
-            val navController = rememberNavController()
-            LaunchedEffect(sharedVm.navHost) {
-                sharedVm.navHost.collect {
-                    if (it.isNotEmpty()) {
-                        if (it == "pop") {
-                            navController.popBackStack()
-                        } else {
-                            navController.navigate(it)
-                        }
-                    }
-                }
-            }
-
             Column {
                 NavHost(
                     modifier = Modifier.weight(1f),
-                    navController = navController,
+                    navController = rememberNavHostController(sharedVm.navHost),
                     startDestination = "dataView"
                 ) {
                     composable("dataView") {

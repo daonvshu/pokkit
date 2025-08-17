@@ -2,18 +2,17 @@ package com.daonvshu.bangumi.pages
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.daonvshu.bangumi.BangumiSharedVm
 import com.daonvshu.shared.components.TabNavBar
 import com.daonvshu.shared.components.VSpacer
 import com.daonvshu.shared.utils.PrimaryColors
+import com.daonvshu.shared.utils.rememberNavHostController
 
 @Composable
 fun DownloadPage(sharedVm: BangumiSharedVm) {
@@ -37,19 +36,7 @@ fun DownloadPage(sharedVm: BangumiSharedVm) {
             when (it) {
                 0 -> vm.navHost.value = "bangumiView"
                 1 -> vm.navHost.value = "downloadListView"
-            }
-        }
-
-        val navController = rememberNavController()
-        LaunchedEffect(vm.navHost) {
-            vm.navHost.collect {
-                if (it.isNotEmpty()) {
-                    if (it == "pop") {
-                        navController.popBackStack()
-                    } else {
-                        navController.navigate(it)
-                    }
-                }
+                2 -> vm.navHost.value = "downloadOtherView"
             }
         }
 
@@ -57,7 +44,7 @@ fun DownloadPage(sharedVm: BangumiSharedVm) {
 
         NavHost(
             modifier = Modifier.weight(1f),
-            navController = navController,
+            navController = rememberNavHostController(vm.navHost),
             startDestination = "bangumiView"
         ) {
             composable("bangumiView") {
@@ -70,6 +57,9 @@ fun DownloadPage(sharedVm: BangumiSharedVm) {
             }
             composable("downloadListView") {
                 DownloadListPage(sharedVm)
+            }
+            composable("downloadOtherView") {
+                DownloadOtherPage()
             }
         }
     }

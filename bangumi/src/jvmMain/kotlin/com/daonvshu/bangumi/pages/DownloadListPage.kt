@@ -11,8 +11,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,17 +22,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.daonvshu.bangumi.BangumiSharedVm
+import com.daonvshu.bangumi.dialog.TorrentRemoveDialog
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.shared.backendservice.bean.TorrentDownloadStateType
 import com.daonvshu.shared.backendservice.bean.TorrentStateType
 import com.daonvshu.shared.components.*
 import com.daonvshu.shared.generated.resources.*
-import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.styles.TextStyleProvider
 import com.daonvshu.shared.utils.PrimaryColors
 import org.jetbrains.compose.resources.painterResource
@@ -112,8 +109,7 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                         .height(86.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(PrimaryColors.Bangumi_Primary.copy(alpha = 0.05f))
-                        .hoverable(hoverInteraction)
-                    ,
+                        .hoverable(hoverInteraction),
                 ) {
                     Row(
                         modifier = Modifier
@@ -273,74 +269,6 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                     }
                 }
                 VSpacer(4.dp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun TorrentRemoveDialog(
-    title: String,
-    callback: (Boolean?) -> Unit
-) {
-    Dialog(onDismissRequest = {
-        callback(null)
-    }) {
-        CompositionLocalProvider(
-            LocalTextStyle provides LocalTextStyle.current.copy(
-                fontSize = 14.sp, color = PrimaryColors.Text_Normal
-            )
-        ) {
-            Surface(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(PrimaryColors.White),
-            ) {
-                Column {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .background(PrimaryColors.Bangumi_Body),
-                    ) {
-                        Text(
-                            title,
-                            fontSize = 18.sp,
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .padding(horizontal = 16.dp),
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        var removeSrcFile by remember { mutableStateOf(AppSettings.settings.general.torrentDeleteWithSrcFile) }
-                        NormalCheckbox(
-                            checked = removeSrcFile,
-                            onCheckedChange = {
-                                removeSrcFile = it
-                                AppSettings.settings.general.torrentDeleteWithSrcFile = it
-                                AppSettings.save()
-                            },
-                            label = "删除下载的源文件"
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        StandardButton(
-                            text = "确定",
-                            color = PrimaryColors.Button_Normal_Primary,
-                        ) {
-                            callback(AppSettings.settings.general.torrentDeleteWithSrcFile)
-                        }
-                    }
-                }
             }
         }
     }

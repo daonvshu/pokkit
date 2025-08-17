@@ -23,6 +23,7 @@ kotlin {
                 implementation("org.jetbrains.compose.material:material-icons-core:1.6.11")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+                implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.0-beta01")
                 //3rd
                 implementation("com.squareup.okhttp3:okhttp:4.11.0")
                 implementation("org.jetbrains.exposed:exposed-core:1.0.0-beta-2")

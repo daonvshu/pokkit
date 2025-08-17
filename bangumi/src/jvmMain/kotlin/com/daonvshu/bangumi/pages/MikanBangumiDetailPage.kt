@@ -14,27 +14,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.daonvshu.bangumi.BangumiSharedVm
+import com.daonvshu.bangumi.dialog.TorrentDownloadDialog
 import com.daonvshu.bangumi.network.MikanApi
 import com.daonvshu.shared.components.*
 import com.daonvshu.shared.generated.resources.*
-import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.PrimaryColors
-import com.daonvshu.shared.utils.friendlySize
-import com.daonvshu.shared.components.TreeView
 import io.github.mataku.middleellipsistext.MiddleEllipsisText
 import org.jetbrains.compose.resources.painterResource
-import java.io.File
-import javax.swing.JFileChooser
 
 @Composable
 fun MikanBangumiDetailPage(sharedVm: BangumiSharedVm) {
@@ -365,158 +359,8 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
 fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
     val show by vm.showDownloadDialog.collectAsStateWithLifecycle()
     if (show) {
-        Dialog(onDismissRequest = {
+        TorrentDownloadDialog(vm.data, vm.currentTorrentRequestId) {
             vm.showDownloadDialog.value = false
-        }) {
-            CompositionLocalProvider(
-                LocalTextStyle provides LocalTextStyle.current.copy(
-                    fontSize = 14.sp, color = PrimaryColors.Text_Normal
-                )
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(PrimaryColors.White),
-                ) {
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .background(PrimaryColors.Bangumi_Body),
-                        ) {
-                            Text(
-                                "下载",
-                                fontSize = 18.sp,
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                                    .padding(horizontal = 16.dp),
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            val downloadSizeAll by vm.downloadSizeAll.collectAsStateWithLifecycle()
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text("总大小：")
-                                Text(downloadSizeAll.friendlySize())
-                            }
-
-                            val saveDir by vm.saveDir.collectAsStateWithLifecycle()
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("保存路径：")
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(PrimaryColors.Bangumi_Body),
-                                ) {
-                                    Text(
-                                        saveDir,
-                                        modifier = Modifier
-                                            .align(Alignment.CenterStart)
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            .fillMaxWidth()
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        val chooser = JFileChooser()
-                                        chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                                        chooser.isAcceptAllFileFilterUsed = false
-                                        chooser.currentDirectory = File(saveDir)
-                                        val result = chooser.showOpenDialog(null)
-                                        if (result == JFileChooser.APPROVE_OPTION) {
-                                            vm.updateDownloadDir(chooser.selectedFile.absolutePath)
-                                        }
-                                    }
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            painterResource(Res.drawable.ic_modify),
-                                            modifier = Modifier,
-                                            contentDescription = "",
-                                            tint = PrimaryColors.Icon_Button,
-                                        )
-
-                                        Text("更改")
-                                    }
-                                }
-                            }
-
-                            val autoCreateDir by vm.autoCreateDir.collectAsStateWithLifecycle()
-                            NormalCheckbox(
-                                checked = autoCreateDir,
-                                onCheckedChange = {
-                                    vm.autoCreateDir.value = it
-                                    AppSettings.settings.general.autoCreateDir = it
-                                    AppSettings.save()
-                                },
-                                label = "以番剧名自动创建目录"
-                            )
-
-                            val onlyDownloadTorrent by vm.onlyDownloadTorrent.collectAsStateWithLifecycle()
-                            NormalCheckbox(
-                                checked = onlyDownloadTorrent,
-                                onCheckedChange = {
-                                    vm.onlyDownloadTorrent.value = it
-                                },
-                                label = "仅下载种子文件"
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .height(300.dp)
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(PrimaryColors.Bangumi_Body),
-                            ) {
-                                val isFetching by vm.isTorrentFetching.collectAsStateWithLifecycle()
-                                if (isFetching) {
-                                    val fetchProgress by vm.torrentFetchProgress.collectAsStateWithLifecycle()
-                                    Text(fetchProgress)
-                                } else {
-                                    val root by vm.torrentFetchedData.collectAsStateWithLifecycle()
-                                    if (root != null) {
-                                        TreeView(
-                                            nodes = listOf(root!!),
-                                            iconHint = PrimaryColors.Icon_Button
-                                        ) {
-                                            vm.reloadSelectedSize()
-                                        }
-                                    }
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp),
-                                horizontalArrangement = Arrangement.End,
-                            ) {
-                                val downloadEnabled by vm.downloadEnabled.collectAsStateWithLifecycle()
-                                StandardButton(
-                                    text = "下载",
-                                    color = PrimaryColors.Button_Normal_Primary,
-                                    enabled = downloadEnabled,
-                                ) {
-                                    vm.startDownloadSelectedTorrents()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

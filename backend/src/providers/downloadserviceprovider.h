@@ -27,11 +27,20 @@ public:
 
     void onTorrentRemoveRequest(const TorrentRemoveRequest& request);
 
+    void onTorrentContentFetch2Request(const TorrentContentFetch2Request& request);
+
 private:
     DataPublishInterface* publishInterface;
     QPointer<TorrentContentFetchTask> task;
+    BitTorrent::TorrentDescriptor lastDescriptor;
+    qint64 lastDescriptorRequestId = -1;
 
 private slots:
     void onTorrentUpdated(const QVector<BitTorrent::Torrent *> &torrents);
     void onTorrentStatusUpdated();
+    void onMetadataDownloaded(const BitTorrent::TorrentInfo &metadata);
+
+private:
+    void sendTorrentResult(qint64 requestId, const QList<TorrentInfoData>& data);
+    bool isTorrentExist(const BitTorrent::TorrentDescriptor& descriptor);
 };

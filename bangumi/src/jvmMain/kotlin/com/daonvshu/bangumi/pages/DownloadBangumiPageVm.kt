@@ -22,17 +22,20 @@ class DownloadBangumiPageVm : ViewModel() {
     fun reloadData() {
         viewModelScope.launch(Dispatchers.IO) {
             val records = DownloadDataRepository.get().getBangumiDownloadRecordList()
-            recordList.value = records.map { (_, data) ->
-                BangumiDownloadRecordViewData(
-                    bindId = data.first().linkedMikanId,
-                    title = data.first().title,
-                    thumbnail = data.first().thumbnail,
-                    finishedCount = data.count { it.finished },
-                    downloadingCount = data.count { !it.finished },
-                )
-            }.sortedBy {
-                it.bindId
-            }
+            recordList.value = records
+                .filter { entry ->
+                    entry.key != -1
+                }.map { (_, data) ->
+                    BangumiDownloadRecordViewData(
+                        bindId = data.first().linkedMikanId,
+                        title = data.first().title,
+                        thumbnail = data.first().thumbnail,
+                        finishedCount = data.count { it.finished },
+                        downloadingCount = data.count { !it.finished },
+                    )
+                }.sortedBy {
+                    it.bindId
+                }
         }
     }
 }

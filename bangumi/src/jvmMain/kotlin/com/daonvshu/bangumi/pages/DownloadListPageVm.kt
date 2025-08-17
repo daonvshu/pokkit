@@ -43,7 +43,6 @@ data class DownloadItemData(
 
 class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
 
-    val srcData = mutableListOf<DownloadSrcRecordList>()
     val displayData = MutableStateFlow<TreeNode<DownloadItemData>?>(null)
 
     init {
@@ -91,11 +90,14 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
 
     fun reloadData() {
         viewModelScope.launch(Dispatchers.IO) {
-            srcData.clear()
+            val srcData = mutableListOf<DownloadSrcRecordList>()
             displayData.value = null
             val records = DownloadDataRepository.get().getBangumiDownloadRecordList()
             val ids = records.keys.sorted()
             ids.forEach { id ->
+                if (id == -1) {
+                    return@forEach
+                }
                 val recordList = records[id]!!
                 if (recordList.isEmpty()) {
                     return@forEach

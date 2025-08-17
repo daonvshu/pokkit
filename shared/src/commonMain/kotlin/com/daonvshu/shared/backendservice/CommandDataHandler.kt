@@ -18,6 +18,7 @@ class CommandDataHandler {
         codec.registerType<TorrentDownloadRequest>()
         codec.registerType<TorrentPauseOrResumeRequest>()
         codec.registerType<TorrentRemoveRequest>()
+        codec.registerType<TorrentContentFetch2Request>()
         //response
         codec.registerType<TorrentContentFetchProgressUpdate>()
         codec.registerType<TorrentContentFetchResult>()
