@@ -8,6 +8,16 @@ interface DownloadDataRepositoryInterface {
      * 获取番剧记录列表，linkId -> List<Data>
      */
     suspend fun getBangumiDownloadRecordList(): Map<Int, List<DownloadRecord>>
+
+    /**
+     * 获取番剧所有下载记录
+     */
+    suspend fun getBangumiAllDownloadRecords(): List<DownloadRecord>
+
+    /**
+     * 获取番剧记录
+     */
+    suspend fun getBangumiDownloadRecord(mikanId: Int): List<DownloadRecord>
 }
 
 class DebugDownloadDataRepository : DownloadDataRepositoryImpl() {
@@ -16,9 +26,17 @@ class DebugDownloadDataRepository : DownloadDataRepositoryImpl() {
 
 open class DownloadDataRepositoryImpl : DownloadDataRepositoryInterface {
     override suspend fun getBangumiDownloadRecordList(): Map<Int, List<DownloadRecord>> {
-        return Databases.downloadRecordService.getAllRecords().groupBy {
+        return getBangumiAllDownloadRecords().groupBy {
             it.linkedMikanId
         }
+    }
+
+    override suspend fun getBangumiAllDownloadRecords(): List<DownloadRecord> {
+        return Databases.downloadRecordService.getAllRecords()
+    }
+
+    override suspend fun getBangumiDownloadRecord(mikanId: Int): List<DownloadRecord> {
+        return Databases.downloadRecordService.getRecordsByMikanId(mikanId)
     }
 }
 

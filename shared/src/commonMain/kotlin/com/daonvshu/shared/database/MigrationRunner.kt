@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 object MigrationRunner {
     private val migrations = listOf<Migration>(
         MigrationV1,
+        MigrationV2,
     )
 
     fun runAllMigrations(database: Database) {
@@ -25,6 +26,7 @@ object MigrationRunner {
                 val appliedVersions = SchemaMigrations.selectAll()
                     .orderBy(SchemaMigrations.version to SortOrder.DESC)
                     .map { it[SchemaMigrations.version] }
+                    .toSet()
 
                 if (appliedVersions.isEmpty()) {
                     println("No need run migrations. Database is empty.")
@@ -46,10 +48,17 @@ object MigrationRunner {
 
                 pendingMigrations.sortedBy { it.version }.forEach { migration ->
                     println("Applying migration ${migration.version}: ${migration.description}")
-                    migration.apply(this)
+                    val skipped = if (tableExists(migration.targetTb)) {
+                        migration.apply(this)
+                        false
+                    } else {
+                        println("Table ${migration.targetTb} does not exist. Skipping migration.")
+                        true
+                    }
+
                     SchemaMigrations.insert {
                         it[version] = migration.version
-                        it[description] = migration.description
+                        it[description] = migration.description + if (skipped) " (skipped)" else ""
                     }
                 }
             } catch (e: Exception) {
@@ -66,5 +75,10 @@ object MigrationRunner {
         val appliedAt = datetime("applied_at").clientDefault {
             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         }
+    }
+
+    private fun tableExists(tableName: Table): Boolean {
+        val meta = Databases.db.dialectMetadata
+        return meta.tableExists(tableName)
     }
 }

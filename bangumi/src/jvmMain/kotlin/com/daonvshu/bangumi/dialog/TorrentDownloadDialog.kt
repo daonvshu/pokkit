@@ -39,10 +39,11 @@ import javax.swing.JFileChooser
 @Composable
 fun TorrentDownloadDialog(
     data: MikanDataRecord? = null,
+    fansub: String? = null,
     torrentRequestId: Long,
     onDismissRequest: () -> Unit,
 ) {
-    val vm = remember { TorrentDownloadDialogVm(data, torrentRequestId) }
+    val vm = remember { TorrentDownloadDialogVm(data, fansub, torrentRequestId) }
 
     BaseDialog(
         title = "下载",
@@ -134,6 +135,7 @@ fun TorrentDownloadDialog(
                 checked = onlyDownloadTorrent,
                 onCheckedChange = {
                     vm.onlyDownloadTorrent.value = it
+                    vm.reloadLinksCheckable()
                 },
                 label = "仅下载种子文件"
             )

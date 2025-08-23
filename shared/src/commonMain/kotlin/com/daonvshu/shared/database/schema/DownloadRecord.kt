@@ -21,6 +21,7 @@ data class DownloadRecord(
     val torrentData: String, //内容base64
     val torrentSrcName: String, //原链接名
     val torrentName: String, //解析链接名
+    val fansub: String, //字幕组
     val finished: Boolean = false,
 ) {
     companion object {
@@ -33,6 +34,7 @@ data class DownloadRecord(
             torrentData = "",
             torrentSrcName = "",
             torrentName = "",
+            fansub = "",
             finished = false
         )
     }
@@ -47,6 +49,7 @@ class DownloadRecordService {
         val torrentData = text("torrent_data")
         val torrentSrcName = text("torrent_src_name")
         val torrentName = text("torrent_name")
+        val fansub = text("fansub")
         val finished = bool("finished").default(false)
     }
 
@@ -66,8 +69,9 @@ class DownloadRecordService {
                 it[torrentData] = record.torrentData
                 it[torrentSrcName] = record.torrentSrcName
                 it[torrentName] = record.torrentName
+                it[fansub] = record.fansub
                 it[finished] = record.finished
-            } [DownloadRecords.id].value
+            }[DownloadRecords.id].value
         }
     }
 
@@ -83,9 +87,34 @@ class DownloadRecordService {
                     torrentData = it[DownloadRecords.torrentData],
                     torrentSrcName = it[DownloadRecords.torrentSrcName],
                     torrentName = it[DownloadRecords.torrentName],
+                    fansub = it[DownloadRecords.fansub],
                     finished = it[DownloadRecords.finished]
                 )
             }
+        }
+    }
+
+    fun getRecordsByMikanId(mikanId: Int): List<DownloadRecord> {
+        return dbQuery {
+            DownloadRecords
+                .selectAll()
+                .where {
+                    DownloadRecords.linkedMikanId.eq(mikanId)
+                }
+                .map {
+                    DownloadRecord(
+                        id = it[DownloadRecords.id].value,
+                        linkedMikanId = it[DownloadRecords.linkedMikanId],
+                        title = it[DownloadRecords.title],
+                        thumbnail = it[DownloadRecords.thumbnail],
+                        torrentInfoHash = it[DownloadRecords.torrentInfoHash],
+                        torrentData = it[DownloadRecords.torrentData],
+                        torrentSrcName = it[DownloadRecords.torrentSrcName],
+                        torrentName = it[DownloadRecords.torrentName],
+                        fansub = it[DownloadRecords.fansub],
+                        finished = it[DownloadRecords.finished]
+                    )
+                }
         }
     }
 

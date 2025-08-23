@@ -2,6 +2,7 @@ package com.daonvshu.bangumi.pages
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.daonvshu.bangumi.repository.DownloadDataRepository
 import com.daonvshu.bangumi.repository.MikanDataRepository
 import com.daonvshu.shared.backendservice.TorrentContentFetchRequest
 import com.daonvshu.shared.backendservice.sendToBackend
@@ -53,6 +54,10 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
     val filterEps = MutableStateFlow(-1)
     // 列表是否全部选中
     val filterIsAllSelected = MutableStateFlow(false)
+    // 当前已下载的记录列表（链接名）
+    var downloadedRecords = emptySet<String>()
+    // 字幕组下载数
+    var fansubDownloadCount = mapOf<String, Int>()
 
     // 是否显示下载对话框
     val showDownloadDialog = MutableStateFlow(false)
@@ -106,12 +111,16 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
                         fansubs.add(it.fansub)
                     }
                 }
-                selectorDataFansubs.value = fansubs
-                if (fansubs.isNotEmpty()) {
-                    filterFansubIndex.value = 0
+                reloadDownloadedRecords {
+                    //sort by fansubs
+                    torrentLinkCaches.sortByDescending { fansubDownloadCount[it.fansub] ?: 0 }
+                    selectorDataFansubs.value = torrentLinkCaches.map { it.fansub }
+                    if (fansubs.isNotEmpty()) {
+                        filterFansubIndex.value = 0
+                    }
+                    filterEps.value = -1
+                    reloadTorrentLinksByFilter()
                 }
-                filterEps.value = -1
-                reloadTorrentLinksByFilter()
             } catch (e: Exception) {
                 e.printStackTrace()
                 LogCollector.addLog("fetch torrent links fail!")
@@ -153,6 +162,34 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
             torrentSrcNames = selectedData.map { it.description },
             torrentUrls = selectedData.map { it.downloadUrl }
         ).sendToBackend()
+    }
+
+    fun reloadDownloadedRecords(finished: (() -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val records = DownloadDataRepository.get().getBangumiDownloadRecord(data.mikanId)
+                downloadedRecords = records.map { it.torrentSrcName }.toSet()
+                fansubDownloadCount = records.filter {
+                    it.fansub.isNotEmpty()
+                }.groupBy {
+                    it.fansub
+                }.mapValues {
+                    it.value.size
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                LogCollector.addLog("reload downloaded records fail!")
+            } finally {
+                finished?.invoke()
+            }
+        }
+    }
+
+    fun curSelectedFanSub(): String? {
+        if (selectorDataFansubs.value.isEmpty()) {
+            return null
+        }
+        return selectorDataFansubs.value[filterFansubIndex.value]
     }
 
     private fun refreshUi() {

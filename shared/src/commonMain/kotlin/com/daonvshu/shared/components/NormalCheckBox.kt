@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.mataku.middleellipsistext.MiddleEllipsisText
 
@@ -21,6 +22,7 @@ fun NormalCheckbox(
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
     label: String? = null,
+    labelColor: Color = Color.Unspecified,
     modifier: Modifier = Modifier,
 ) {
     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
@@ -42,7 +44,7 @@ fun NormalCheckbox(
             )
 
             if (label != null) {
-                MiddleEllipsisText(label)
+                MiddleEllipsisText(label, color = labelColor)
             }
         }
     }

@@ -3,6 +3,7 @@ package com.daonvshu.bangumi.dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.daonvshu.bangumi.pages.TorrentNodeData
+import com.daonvshu.bangumi.repository.DownloadDataRepository
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.RequestOpenDir
 import com.daonvshu.shared.backendservice.TorrentContentFetchResult
@@ -16,16 +17,19 @@ import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.schema.DownloadRecord
 import com.daonvshu.shared.database.schema.MikanDataRecord
 import com.daonvshu.shared.settings.AppSettings
+import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.dir
 import com.daonvshu.shared.utils.friendlySize
 import com.daonvshu.shared.utils.toValidSystemName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Base64
 
-class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long): ViewModel() {
+class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, torrentRequestId: Long): ViewModel() {
     // 种子文件请求进度
     val torrentFetchProgress = MutableStateFlow("")
     // 种子请求中
@@ -42,6 +46,8 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long
     val onlyDownloadTorrent = MutableStateFlow(false)
     // 是否可以点击下载
     val downloadEnabled = MutableStateFlow(false)
+    // 当前已下载的记录列表（链接名）
+    var downloadedRecords = emptySet<String>()
 
     init {
         BackendDataObserver.torrentContentFetchProgressUpdate.onEach { data ->
@@ -56,8 +62,10 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long
             if (data != null) {
                 if (data.requestId == torrentRequestId) {
                     isTorrentFetching.value = false
-                    parseTorrentLinks(data)
                     BackendDataObserver.torrentContentFetchResult.value = null
+                    reloadDownloadedRecords {
+                        parseTorrentLinks(data)
+                    }
                 }
             }
         }.launchIn(viewModelScope)
@@ -117,6 +125,7 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long
                         torrentData = torrents.first().torrentContent,
                         torrentSrcName = torrents.first().srcName,
                         torrentName = torrents.first().linkName,
+                        fansub = fanSub ?: "",
                         finished = false
                     )
                 )
@@ -144,6 +153,33 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long
         } ?: 0L
 
         downloadEnabled.value = downloadSizeAll.value > 0 && saveDir.value.isNotEmpty()
+    }
+
+    fun reloadDownloadedRecords(finished: (() -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val records = DownloadDataRepository.get().getBangumiAllDownloadRecords()
+                downloadedRecords = records.map { it.torrentInfoHash }.toSet()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                LogCollector.addLog("reload downloaded records fail!")
+            } finally {
+                finished?.invoke()
+            }
+        }
+    }
+
+    fun reloadLinksCheckable() {
+        torrentFetchedData.value = torrentFetchedData.value?.deepCopy(true, nodeProducer = { node ->
+            if (!onlyDownloadTorrent.value && downloadedRecords.contains(node.data?.torrentInfoHash)) {
+                node.checkable = false
+                node.checkState.value = CheckState.Unchecked
+            } else {
+                node.checkable = true
+            }
+            node
+        })
+        reloadSelectedSize()
     }
 
     private fun parseTorrentLinks(data: TorrentContentFetchResult) {
@@ -178,6 +214,10 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, torrentRequestId: Long
                             itemSize = path.size
                         ) else null
                     )
+                    if (!onlyDownloadTorrent.value && downloadedRecords.contains(content.torrentInfoHash)) {
+                        newNode.checkable = false
+                        newNode.checkState.value = CheckState.Unchecked
+                    }
                     current.children.add(newNode)
                     newNode.parent = current
                     current = newNode

@@ -73,7 +73,7 @@ fun AddTaskDialog(vm: DownloadOtherPageVm) {
 fun DownloadDialog(vm: DownloadOtherPageVm) {
     val show by vm.showDownloadDialog.collectAsStateWithLifecycle()
     if (show) {
-        TorrentDownloadDialog(null, vm.currentTorrentRequestId) {
+        TorrentDownloadDialog(null, null, vm.currentTorrentRequestId) {
             vm.showDownloadDialog.value = false
             vm.reloadData()
         }

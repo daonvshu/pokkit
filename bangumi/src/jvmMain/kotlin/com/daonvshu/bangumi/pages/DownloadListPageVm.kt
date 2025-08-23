@@ -75,14 +75,9 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
                 }
             }
             if (isAnyRemoved) {
-                val oldData = displayData.value!!
-                val rootNode = TreeNode<DownloadItemData>("/", null)
-                rootNode.children.addAll(oldData.children)
-                rootNode.children.forEach { parentNode ->
-                    parentNode.children.removeIf { it.data!!.removed }
+                displayData.value = displayData.value?.deepCopy(true, null) {
+                    !(it.data?.removed ?: false)
                 }
-                rootNode.children.removeIf { it.children.isEmpty() }
-                displayData.value = rootNode
             }
 
         }.launchIn(viewModelScope)
@@ -167,12 +162,13 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
         ).sendToBackend()
     }
 
-    fun requestPauseAll() {
+    fun requestPauseAll(node: TreeNode<DownloadItemData>) {
         LogCollector.addLog("request torrent pause all")
+        val childRecords = node.children.map { it.data!!.record }
         TorrentPauseOrResumeRequest(
             isPause = true,
-            isAll = true,
-            torrentHash = emptyList()
+            isAll = false,
+            torrentHash = childRecords.map { it.torrentInfoHash }
         ).sendToBackend()
     }
 
@@ -185,12 +181,13 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
         ).sendToBackend()
     }
 
-    fun requestResumeAll() {
+    fun requestResumeAll(node: TreeNode<DownloadItemData>) {
         LogCollector.addLog("request torrent resume all")
+        val childRecords = node.children.map { it.data!!.record }
         TorrentPauseOrResumeRequest(
             isPause = false,
-            isAll = true,
-            torrentHash = emptyList()
+            isAll = false,
+            torrentHash = childRecords.map { it.torrentInfoHash }
         ).sendToBackend()
     }
 
@@ -207,7 +204,7 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
 
         Databases.downloadRecordService.removeRecord(torrent.record.id)
 
-        displayData.value = displayData.value?.deepCopy(true) { node ->
+        displayData.value = displayData.value?.deepCopy(true, null) { node ->
             node.data?.record?.id != torrent.record.id
         }
     }
@@ -222,7 +219,7 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
         val recordIds = childRecords.map { it.id }
         Databases.downloadRecordService.removeRecords(recordIds)
 
-        displayData.value = displayData.value?.deepCopy(true) { node ->
+        displayData.value = displayData.value?.deepCopy(true, null) { node ->
             !recordIds.contains(node.data?.record?.id)
         }
     }

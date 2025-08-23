@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.*
 import androidx.compose.ui.unit.dp
@@ -345,7 +346,12 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
                                     }
                                     vm.filterIsAllSelected.value = vm.itemChecked.value.all { it }
                                 },
-                                label = item.description
+                                label = item.description,
+                                labelColor = if (vm.downloadedRecords.contains(item.description)) {
+                                    PrimaryColors.GRAY.color(4)
+                                } else {
+                                    Color.Unspecified
+                                }
                             )
                         }
                     }
@@ -359,8 +365,11 @@ fun DownloadLinkView(vm: MikanBangumiDetailPageVm) {
 fun DownloadDialog(vm: MikanBangumiDetailPageVm) {
     val show by vm.showDownloadDialog.collectAsStateWithLifecycle()
     if (show) {
-        TorrentDownloadDialog(vm.data, vm.currentTorrentRequestId) {
+        TorrentDownloadDialog(vm.data, vm.curSelectedFanSub(), vm.currentTorrentRequestId) {
             vm.showDownloadDialog.value = false
+            vm.reloadDownloadedRecords {
+                vm.reloadTorrentLinksByFilter()
+            }
         }
     }
 }

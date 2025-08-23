@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.daonvshu.shared.generated.resources.Res
 import com.daonvshu.shared.generated.resources.ic_arrow_down
 import com.daonvshu.shared.generated.resources.ic_arrow_right
+import com.daonvshu.shared.utils.PrimaryColors
 import org.jetbrains.compose.resources.painterResource
 import java.util.*
 
@@ -37,28 +38,29 @@ data class TreeNode<T>(
     val label: String,
     val data: T? = null,
     val children: MutableList<TreeNode<T>> = mutableListOf(),
+    var checkable: Boolean = true,
     val checkState: MutableState<CheckState> = mutableStateOf(CheckState.Checked),
     val isExpanded: MutableState<Boolean> = mutableStateOf(true),
     var parent: TreeNode<T>? = null,
     val id: String = UUID.randomUUID().toString(), // ✅ 唯一标识
 ) {
     /** 递归深拷贝自己和所有子节点（可选过滤） */
-    fun deepCopy(removeEmptyGroup: Boolean, filter: ((TreeNode<T>) -> Boolean)? = null): TreeNode<T>? {
+    fun deepCopy(removeEmptyGroup: Boolean, nodeProducer: ((TreeNode<T>) -> TreeNode<T>)?, filter: ((TreeNode<T>) -> Boolean)? = null): TreeNode<T>? {
         // 如果目标节点不需要保留（通过 filter 判断）
         if (filter != null && !filter(this)) {
             return null
         }
 
         // 深拷贝 children
-        val newChildren = children.mapNotNull { it.deepCopy(removeEmptyGroup, filter) }.toMutableList()
+        val newChildren = children.mapNotNull { it.deepCopy(removeEmptyGroup, nodeProducer, filter) }.toMutableList()
 
         // 如果开启了删除空分组
-        if (removeEmptyGroup && newChildren.isEmpty()) {
+        if (children.isNotEmpty() && removeEmptyGroup && newChildren.isEmpty()) {
             return null
         }
 
         // 创建新的节点（parent 暂时设 null，稍后修复）
-        val newNode = TreeNode(
+        var newNode = TreeNode(
             label = this.label,
             data = this.data,
             children = newChildren,
@@ -67,6 +69,9 @@ data class TreeNode<T>(
             parent = null,
             id = this.id // 保留原 id
         )
+        if (nodeProducer != null) {
+            newNode = nodeProducer(newNode)
+        }
 
         // 设置子节点的 parent
         newChildren.forEach { child ->
@@ -87,7 +92,7 @@ fun <T> setupTreeParentLinks(node: TreeNode<T>) {
 
 // ✅ 切换选中状态
 fun <T> toggleCheckState(node: TreeNode<T>, newState: CheckState) {
-    node.checkState.value = newState
+    node.checkState.value = if (node.checkable) newState else CheckState.Unchecked
     node.children.forEach { toggleCheckState(it, newState) }
     updateParentState(node.parent)
 }
@@ -95,7 +100,7 @@ fun <T> toggleCheckState(node: TreeNode<T>, newState: CheckState) {
 // ✅ 更新父节点状态
 fun <T> updateParentState(node: TreeNode<T>?) {
     node ?: return
-    val states = node.children.map { it.checkState.value }
+    val states = node.children.filter { it.checkable }.map { it.checkState.value }
     node.checkState.value = when {
         states.all { it == CheckState.Checked } -> CheckState.Checked
         states.all { it == CheckState.Unchecked } -> CheckState.Unchecked
@@ -152,9 +157,7 @@ fun <T> TreeView(
     val hScrollState = rememberScrollState()
 
     // ⚠️ 动态响应树结构变化
-    val flatList by remember {
-        derivedStateOf { flattenTree(nodes) }
-    }
+    val flatList by remember(nodes) { derivedStateOf { flattenTree(nodes) } }
 
     // 📏 提取最大 label 宽度（文本对齐用）
     val maxLabelWidth = measureMaxTextWidthWithStyle(
@@ -222,7 +225,7 @@ fun <T> TreeView(
                                                 override suspend fun bringChildIntoView(localRect: () -> Rect?) {
                                                 }
                                             })
-                                            .clickable {
+                                            .clickable(node.checkable) {
                                                 val newState = if (checkState == CheckState.Checked)
                                                     CheckState.Unchecked else CheckState.Checked
                                                 toggleCheckState(node, newState)
@@ -235,16 +238,24 @@ fun <T> TreeView(
                                                 .scale(0.8f)
                                                 .padding(top = 4.dp, bottom = 4.dp, end = 4.dp),
                                             state = toggleableState,
+                                            enabled = node.checkable,
                                             onClick = {
-                                                val newState = if (checkState == CheckState.Checked)
-                                                    CheckState.Unchecked else CheckState.Checked
-                                                toggleCheckState(node, newState)
-                                                checkStateChanged?.invoke()
+                                                if (node.checkable) {
+                                                    val newState = if (checkState == CheckState.Checked)
+                                                        CheckState.Unchecked else CheckState.Checked
+                                                    toggleCheckState(node, newState)
+                                                    checkStateChanged?.invoke()
+                                                }
                                             }
                                         )
 
                                         Text(
                                             text = node.label,
+                                            color = if (!node.checkable) {
+                                                PrimaryColors.GRAY.color(4)
+                                            } else {
+                                                Color.Unspecified
+                                            },
                                             modifier = Modifier
                                                 .width(maxLabelWidth)
                                                 .padding(end = 4.dp)

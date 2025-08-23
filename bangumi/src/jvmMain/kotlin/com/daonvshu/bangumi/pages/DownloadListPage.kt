@@ -1,5 +1,7 @@
 package com.daonvshu.bangumi.pages
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -71,14 +73,14 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                         resource = Res.drawable.ic_resume,
                         color = PrimaryColors.Icon_Button_Primary
                     ) {
-                        vm.requestResumeAll()
+                        vm.requestResumeAll(node)
                     }
 
                     ShapeIconButton(
                         resource = Res.drawable.ic_pause,
                         color = PrimaryColors.Icon_Button_Primary
                     ) {
-                        vm.requestPauseAll()
+                        vm.requestPauseAll(node)
                     }
 
                     ShapeIconButton(
@@ -257,8 +259,9 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                 }
                                 if (isDownloading) {
                                     val state by torrent.data
+                                    val progress by animateFloatAsState(state!!.progress.toFloat(), animationSpec = tween(800))
                                     LinearProgressIndicator(
-                                        progress = state!!.progress.toFloat(),
+                                        progress = progress,
                                         modifier = Modifier.fillMaxWidth().height(4.dp).padding(end = 4.dp),
                                         color = PrimaryColors.Bangumi_Primary,
                                         strokeCap = StrokeCap.Round,
