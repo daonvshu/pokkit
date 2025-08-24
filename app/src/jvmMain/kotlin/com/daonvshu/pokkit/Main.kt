@@ -68,6 +68,7 @@ import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import com.daonvshu.BuildConfig
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.components.HSpacer
@@ -104,15 +105,27 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
             .background(selectedColor.copy(alpha = 0.1f))
         )
 
-        Text(
+        Row(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(start = 24.dp),
-            text = "Pokkit",
-            fontFamily = Calista(),
-            fontSize = 30.sp,
-            color = selectedColor
-        )
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                text = "Pokkit",
+                fontFamily = Calista(),
+                fontSize = 30.sp,
+                color = selectedColor
+            )
+
+            Text(
+                modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
+                text = "V${BuildConfig.VERSION}",
+                fontFamily = ChillRoundGothic(),
+                fontSize = 12.sp,
+                color = selectedColor
+            )
+        }
 
         Row(
             Modifier

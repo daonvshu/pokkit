@@ -7,7 +7,30 @@ plugins {
 }
 
 group = "com.daonvshu"
-version = "1.0-SNAPSHOT"
+version = "3.0.0"
+
+val generateBuildConfig by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/buildConfig")
+    inputs.property("version", version)
+    outputs.dir(outputDir)
+
+    doLast {
+        val packageName = "com.daonvshu"
+        val file = outputDir.get().dir(packageName.replace(".", "/"))
+            .file("BuildConfig.kt").asFile
+
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package $packageName
+
+            object BuildConfig {
+                const val VERSION = "$version"
+            }
+            """.trimIndent()
+        )
+    }
+}
 
 kotlin {
     jvm()
@@ -27,6 +50,8 @@ kotlin {
                 implementation("io.coil-kt.coil3:coil-compose:3.3.0")
                 implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
             }
+
+            kotlin.srcDir(generateBuildConfig.map { it.outputs.files })
         }
     }
 }
@@ -38,7 +63,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "pokkit"
-            packageVersion = "1.0.0"
+            packageVersion = version.toString()
         }
     }
+}
+
+tasks.named("compileKotlinJvm") {
+    dependsOn(generateBuildConfig)
 }
