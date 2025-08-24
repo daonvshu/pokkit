@@ -16,6 +16,7 @@ object MigrationRunner {
     private val migrations = listOf<Migration>(
         MigrationV1,
         MigrationV2,
+        MigrationV3,
     )
 
     fun runAllMigrations(database: Database) {

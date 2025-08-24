@@ -39,9 +39,9 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
     // 下载总大小
     val downloadSizeAll = MutableStateFlow(0L)
     // 保存位置
-    val saveDir = MutableStateFlow(AppSettings.settings.general.bangumiLastSavePath)
+    val saveDir = MutableStateFlow("")
     // 自动创建目录
-    val autoCreateDir = MutableStateFlow(AppSettings.settings.general.autoCreateDir)
+    val autoCreateDir = MutableStateFlow(true)
     // 仅下载种子文件
     val onlyDownloadTorrent = MutableStateFlow(false)
     // 是否可以点击下载
@@ -50,6 +50,10 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
     var downloadedRecords = emptySet<String>()
 
     init {
+        val lastSaveDir = DownloadDataRepository.get().getBangumiLastSaveDir(data?.mikanId ?: -1)
+        saveDir.value = lastSaveDir.first
+        autoCreateDir.value = lastSaveDir.second
+
         BackendDataObserver.torrentContentFetchProgressUpdate.onEach { data ->
             if (data != null) {
                 if (data.requestId == torrentRequestId) {
@@ -126,6 +130,8 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
                         torrentSrcName = torrents.first().srcName,
                         torrentName = torrents.first().linkName,
                         fansub = fanSub ?: "",
+                        saveDir = subSaveDir.absolutePath,
+                        autoCreateDir = autoCreateDir.value,
                         finished = false
                     )
                 )

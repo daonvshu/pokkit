@@ -2,12 +2,14 @@ package com.daonvshu.shared.database.schema
 
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.database.dbQuery
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -22,6 +24,8 @@ data class DownloadRecord(
     val torrentSrcName: String, //原链接名
     val torrentName: String, //解析链接名
     val fansub: String, //字幕组
+    var saveDir: String, //保存路径
+    val autoCreateDir: Boolean, //自动创建目录
     val finished: Boolean = false,
 ) {
     companion object {
@@ -35,6 +39,8 @@ data class DownloadRecord(
             torrentSrcName = "",
             torrentName = "",
             fansub = "",
+            saveDir = "",
+            autoCreateDir = true,
             finished = false
         )
     }
@@ -50,6 +56,8 @@ class DownloadRecordService {
         val torrentSrcName = text("torrent_src_name")
         val torrentName = text("torrent_name")
         val fansub = text("fansub")
+        val saveDir = text("save_dir")
+        val autoCreateDir = bool("auto_create_dir").default(true)
         val finished = bool("finished").default(false)
     }
 
@@ -70,6 +78,8 @@ class DownloadRecordService {
                 it[torrentSrcName] = record.torrentSrcName
                 it[torrentName] = record.torrentName
                 it[fansub] = record.fansub
+                it[saveDir] = record.saveDir
+                it[autoCreateDir] = record.autoCreateDir
                 it[finished] = record.finished
             }[DownloadRecords.id].value
         }
@@ -88,6 +98,8 @@ class DownloadRecordService {
                     torrentSrcName = it[DownloadRecords.torrentSrcName],
                     torrentName = it[DownloadRecords.torrentName],
                     fansub = it[DownloadRecords.fansub],
+                    saveDir = it[DownloadRecords.saveDir],
+                    autoCreateDir = it[DownloadRecords.autoCreateDir],
                     finished = it[DownloadRecords.finished]
                 )
             }
@@ -112,6 +124,8 @@ class DownloadRecordService {
                         torrentSrcName = it[DownloadRecords.torrentSrcName],
                         torrentName = it[DownloadRecords.torrentName],
                         fansub = it[DownloadRecords.fansub],
+                        saveDir = it[DownloadRecords.saveDir],
+                        autoCreateDir = it[DownloadRecords.autoCreateDir],
                         finished = it[DownloadRecords.finished]
                     )
                 }
@@ -130,5 +144,26 @@ class DownloadRecordService {
 
     fun removeRecords(recordIds: List<Int>) = dbQuery {
         DownloadRecords.deleteWhere { DownloadRecords.id.inList(recordIds) }
+    }
+
+    fun getLastSaveDir(mikanId: Int): DownloadRecord? {
+        return dbQuery {
+            val query = DownloadRecords.select(
+                DownloadRecords.saveDir,
+                DownloadRecords.autoCreateDir
+            )
+            if (mikanId != -1) {
+                query.where { DownloadRecords.linkedMikanId.eq(mikanId) }
+            }
+            query.orderBy(DownloadRecords.id to SortOrder.DESC)
+                .limit(1)
+                .map {
+                    DownloadRecord.empty().copy(
+                        saveDir = it[DownloadRecords.saveDir],
+                        autoCreateDir = it[DownloadRecords.autoCreateDir]
+                    )
+                }
+                .singleOrNull()
+        }
     }
 }

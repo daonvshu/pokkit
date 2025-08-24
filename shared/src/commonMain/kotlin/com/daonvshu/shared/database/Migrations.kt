@@ -34,3 +34,14 @@ object MigrationV2: Migration {
         transaction.exec("ALTER TABLE downloadrecord ADD COLUMN \"fansub\" TEXT DEFAULT '';")
     }
 }
+
+object MigrationV3: Migration {
+    override val version: Int = 3
+    override val description: String = "Add column 'saveDir' and 'autoCreateDir' for download record"
+    override val targetTb: Table = DownloadRecordService.DownloadRecords
+
+    override fun apply(transaction: JdbcTransaction) {
+        transaction.exec("ALTER TABLE downloadrecord ADD COLUMN \"save_dir\" TEXT DEFAULT '';")
+        transaction.exec("ALTER TABLE downloadrecord ADD COLUMN \"auto_create_dir\" BOOLEAN DEFAULT TRUE;")
+    }
+}
