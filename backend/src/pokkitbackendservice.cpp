@@ -45,7 +45,7 @@ void PokkitBackendService::start() {
     }
     qInfo() << "Server started, listen client connect!";
 
-    Profile::initInstance(Path(), QString(), false);
+    Profile::initInstance(Path(QCoreApplication::applicationDirPath() + "/.data"), QString(), false);
 
     try {
         Logger::initInstance();
