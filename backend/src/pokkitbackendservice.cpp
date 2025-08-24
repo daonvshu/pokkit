@@ -32,6 +32,7 @@ void PokkitBackendService::start() {
     }
     QString pipeName("pokkit_backend_pipe");
     QLocalServer::removeServer(pipeName);
+    server.setSocketOptions(QLocalServer::UserAccessOption);
     if (!server.listen(pipeName)) {
         qCritical() << "Failed to start server:" << server.errorString();
         return;

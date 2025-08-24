@@ -190,7 +190,7 @@ fun main() = application {
     val scope = rememberCoroutineScope { Dispatchers.IO }
     LaunchedEffect(Unit) {
         try {
-            ProcessBuilder("./pokkit_backend.exe").start()
+            ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
         } catch (e: Exception) {
             LogCollector.addLog(e.message ?: "")
         }

@@ -138,3 +138,12 @@
 
 -dontwarn org.apache.commons.logging.LogFactory
 -dontwarn org.apache.commons.logging.**
+
+-keep class org.sqlite.** { *; }
+
+-keep class com.daonvshu.protocol.codec.annotations.**
+-keep class com.daonvshu.protocol.** { *; }
+-keep @com.daonvshu.protocol.codec.annotations.Type class * { *; }
+-keepclassmembers class * {
+    @com.daonvshu.protocol.codec.annotations.Subscribe *;
+}
