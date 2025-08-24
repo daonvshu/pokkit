@@ -66,8 +66,8 @@ object BackendService : Closeable {
         ).sendToBackend()
     }
 
-    fun tryCreatePipeIfNeeded() {
-        if (readPipe != null && writePipe != null) return
+    fun tryCreatePipeIfNeeded(): Boolean {
+        if (readPipe != null && writePipe != null) return true
         try {
             LogCollector.addLog("try create connection to backend service...")
             readPipe = RandomAccessFile("""\\.\pipe\$PIPE_NAME""", "rw")
@@ -94,10 +94,12 @@ object BackendService : Closeable {
             }
             updateProxyInfo()
             enableTrackOnFirstLoad()
+            return true
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
             LogCollector.addLog("backend service not found!")
             BackendDataObserver.backendServiceConnectError.value = "本地服务无法连接!"
+            return false
         }
     }
 

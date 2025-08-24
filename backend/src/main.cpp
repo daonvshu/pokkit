@@ -1,5 +1,4 @@
 #include <qlogcollector.h>
-#include <qdebug.h>
 
 #include "pokkitbackendservice.h"
 
@@ -14,10 +13,11 @@ int main(int argc, char* argv[]) {
             ;
     logcollector::QLogCollector::instance().registerLog();
 
-    //if (service.isRunning()) {
-    //    qCritical() << "Service already running.";
-    //    return 0;
-    //}
+    if (service.isRunning()) {
+        qCritical() << "Service already running.";
+        return 0;
+    }
 
+    service.start();
     return service.exec();
 }

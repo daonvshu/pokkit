@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +53,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberNotification
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.singleWindowApplication
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -76,7 +78,12 @@ import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.settings.AppSettings
 import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.PrimaryColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import okhttp3.OkHttpClient
 import okio.Path
 import java.io.File
@@ -93,16 +100,18 @@ object TrayIcon : Painter() {
 @Composable
 private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDraggableArea {
 
-    Box(Modifier
-        .fillMaxWidth()
-        .height(48.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(48.dp)
     ) {
         val selectedIndex by viewModel.selectedMenuIndex.collectAsStateWithLifecycle()
         val selectedColor by animateColorAsState(viewModel.menuItems[selectedIndex].color)
 
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(selectedColor.copy(alpha = 0.1f))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(selectedColor.copy(alpha = 0.1f))
         )
 
         Row(
@@ -148,8 +157,9 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Box(modifier = Modifier
-                        .width(24.dp)
+                    Box(
+                        modifier = Modifier
+                            .width(24.dp)
                     ) {
                         if (i == selectedIndex) {
                             Text(
@@ -175,62 +185,47 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
 
 @OptIn(DelicateCoilApi::class)
 fun main() = application {
-    Databases.init()
+    var initFinished by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope { Dispatchers.IO }
     LaunchedEffect(Unit) {
-        AppSettings.proxyFlow.collect { proxy ->
-            SingletonImageLoader.setUnsafe { context ->
-                ImageLoader.Builder(context)
-                    .crossfade(true)
-                    .components {
-                        add(
-                            OkHttpNetworkFetcherFactory(
-                                callFactory = {
-                                    OkHttpClient.Builder()
-                                        .proxy(proxy)
-                                        .build()
-                                }
-                            )
-                        )
-                    }
-                    .memoryCache {
-                        MemoryCache.Builder()
-                            .maxSizePercent(context, 0.25)
-                            .build()
-                    }
-                    .diskCache {
-                        DiskCache.Builder()
-                            .directory(File(".cache/image_cache"))
-                            .maxSizePercent(0.02)
-                            .build()
-                    }
-                    .build()
-            }
+        try {
+            ProcessBuilder("./pokkit_backend.exe").start()
+        } catch (e: Exception) {
+            LogCollector.addLog(e.message ?: "")
         }
+        delay(200)
+
+        var tryConnectSize = 5
+        var success = false
+        while (tryConnectSize-- > 0) {
+            success = BackendService.tryCreatePipeIfNeeded()
+            if (success) {
+                break
+            }
+            delay(500)
+        }
+        if (!success) {
+            throw RuntimeException("Backend service cannot not started!")
+        }
+
+        Databases.init()
+        initFinished = true
     }
 
     var isOpen by remember { mutableStateOf(true) }
-
-    if (isOpen) {
-        val trayState = rememberTrayState()
-        val notification = rememberNotification("Notification", "This is a notification")
-
-        Tray(
-            state = trayState,
-            icon = TrayIcon,
-            menu = {
-                Item("Quit", onClick = {
-                    isOpen = false
-                })
-                Item("Show Notification", onClick = {
-                    trayState.sendNotification(notification)
-                })
-            },
-        )
-
+    if (!initFinished) {
+        Window(
+            onCloseRequest = {},
+            undecorated = true,
+            transparent = true,
+            state = rememberWindowState(width = 1.dp, height = 1.dp),
+        ) {}
+    } else if (isOpen) {
         val windowState = rememberWindowState(width = 1280.dp, height = 768.dp)
         Window(
             onCloseRequest = {
+                scope.cancel()
                 isOpen = false
                 BackendService.close()
             },
@@ -239,6 +234,38 @@ fun main() = application {
             transparent = true,
             state = windowState,
         ) {
+            LaunchedEffect(Unit) {
+                AppSettings.proxyFlow.collect { proxy ->
+                    SingletonImageLoader.setUnsafe { context ->
+                        ImageLoader.Builder(context)
+                            .crossfade(true)
+                            .components {
+                                add(
+                                    OkHttpNetworkFetcherFactory(
+                                        callFactory = {
+                                            OkHttpClient.Builder()
+                                                .proxy(proxy)
+                                                .build()
+                                        }
+                                    )
+                                )
+                            }
+                            .memoryCache {
+                                MemoryCache.Builder()
+                                    .maxSizePercent(context, 0.25)
+                                    .build()
+                            }
+                            .diskCache {
+                                DiskCache.Builder()
+                                    .directory(File(".cache/image_cache"))
+                                    .maxSizePercent(0.02)
+                                    .build()
+                            }
+                            .build()
+                    }
+                }
+            }
+
             val mainVm = viewModel { MainViewModel() }
             val selectedMenuItem by mainVm.selectedMenuIndex.collectAsStateWithLifecycle()
             val selectedColor by animateColorAsState(mainVm.menuItems[selectedMenuItem].color)

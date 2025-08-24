@@ -52,10 +52,6 @@ fun BangumiMain() {
     val viewModel = viewModel{ BangumiMainVm() }
     val sharedVm = viewModel{ BangumiSharedVm() }
 
-    LaunchedEffect(Unit) {
-        BackendService.tryCreatePipeIfNeeded()
-    }
-
     Row {
         val selectedIndex by viewModel.menuItemIndex.collectAsStateWithLifecycle()
         val menus = arrayListOf("数据源(Mikan)", "搜索", "设置", "下载")

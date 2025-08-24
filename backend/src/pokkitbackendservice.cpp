@@ -14,11 +14,8 @@
 #include <qdebug.h>
 
 PokkitBackendService::PokkitBackendService(int argc, char **argv)
-    : QtService<QtSingleCoreApplication>(argc, argv, "Pokkit Backend Service")
+    : QtSingleCoreApplication(argc, argv)
 {
-    setServiceDescription("Pokkit app backend download service.");
-    setServiceFlags(QtServiceBase::CanBeSuspended);
-
     connect(&server, &QLocalServer::newConnection, this, &PokkitBackendService::newConnection);
 
     commandDataHandler = new CommandDataHandler(this);
@@ -27,10 +24,6 @@ PokkitBackendService::PokkitBackendService(int argc, char **argv)
             writeChannelSocket->write(data);
         }
     });
-}
-
-bool PokkitBackendService::isRunning() {
-    return application()->isRunning();
 }
 
 void PokkitBackendService::start() {
@@ -60,14 +53,6 @@ void PokkitBackendService::start() {
     } catch (const RuntimeError& err) {
         qWarning() << "BitTorrent initialize failed! error:" << err.message();
     }
-}
-
-void PokkitBackendService::pause() {
-    BitTorrent::Session::instance()->pause();
-}
-
-void PokkitBackendService::resume() {
-    BitTorrent::Session::instance()->resume();
 }
 
 void PokkitBackendService::newConnection() {

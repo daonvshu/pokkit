@@ -64,6 +64,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "pokkit"
             packageVersion = version.toString()
+
+            buildTypes.release.proguard {
+                configurationFiles.from(project.file("proguard-rules.pro"))
+            }
         }
     }
 }
