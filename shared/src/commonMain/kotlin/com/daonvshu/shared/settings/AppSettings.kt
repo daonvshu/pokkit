@@ -1,6 +1,7 @@
 package com.daonvshu.shared.settings
 
 import com.daonvshu.shared.settings.bean.PokkitSetting
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.net.InetSocketAddress
@@ -40,5 +41,11 @@ object AppSettings {
             return null
         }
         return Proxy(Proxy.Type.HTTP, InetSocketAddress(mikanSetting.proxyAddress, mikanSetting.proxyPort))
+    }
+
+    val proxyFlow = MutableStateFlow(getProxy())
+
+    fun notifyProxyChanged() {
+        proxyFlow.value = getProxy()
     }
 }

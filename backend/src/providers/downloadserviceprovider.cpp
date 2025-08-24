@@ -280,3 +280,31 @@ bool DownloadServiceProvider::isTorrentExist(const BitTorrent::TorrentDescriptor
     return isExist;
 }
 
+void DownloadServiceProvider::getGlobalSpeed() {
+    GlobalSpeedLimitFeedback data;
+    data.download = BitTorrent::Session::instance()->globalDownloadSpeedLimit();
+    data.upload = BitTorrent::Session::instance()->globalUploadSpeedLimit();
+    publishInterface->publish([&] (ProtocolCodecEngine& codec) {
+        return codec.encode(data);
+    });
+}
+
+void DownloadServiceProvider::updateGlobalSpeed(const GlobalSpeedLimitUpdateRequest &request) {
+    BitTorrent::Session::instance()->setGlobalDownloadSpeedLimit(request.download());
+    BitTorrent::Session::instance()->setGlobalUploadSpeedLimit(request.upload());
+}
+
+void DownloadServiceProvider::getTrackersRequest() {
+    TrackerListFeedback data;
+    data.enabled = BitTorrent::Session::instance()->isTrackerEnabled();
+    data.trackers = BitTorrent::Session::instance()->additionalTrackers();
+    publishInterface->publish([&] (ProtocolCodecEngine& codec) {
+        return codec.encode(data);
+    });
+}
+
+void DownloadServiceProvider::updateTrackersRequest(const TrackerListUpdateRequest &request) {
+    BitTorrent::Session::instance()->setTrackerEnabled(request.enable());
+    BitTorrent::Session::instance()->setAdditionalTrackers(request.trackers());
+}
+

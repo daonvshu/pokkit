@@ -22,6 +22,7 @@ data class IdentifyAuthRequest(
 
 @Type(id = 1, codec = CodecType.JSON)
 data class ProxyInfoSync(
+    val enabled: Boolean,
     val proxyAddress: String,
     val proxyPort: Int
 )
@@ -59,6 +60,7 @@ object BackendService : Closeable {
 
     fun updateProxyInfo() {
         ProxyInfoSync(
+            enabled = AppSettings.settings.general.proxyEnabled,
             proxyAddress = AppSettings.settings.general.proxyAddress,
             proxyPort = AppSettings.settings.general.proxyPort,
         ).sendToBackend()
@@ -91,10 +93,58 @@ object BackendService : Closeable {
                 readPipe = null
             }
             updateProxyInfo()
+            enableTrackOnFirstLoad()
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
             LogCollector.addLog("backend service not found!")
             BackendDataObserver.backendServiceConnectError.value = "本地服务无法连接!"
+        }
+    }
+
+    private fun enableTrackOnFirstLoad() {
+        if (AppSettings.settings.general.trackReset) {
+            //send tracks to backend
+            val trackers = """
+                udp://tracker.opentrackr.org:1337/announce
+                udp://open.demonii.com:1337/announce
+                udp://open.stealth.si:80/announce
+                udp://explodie.org:6969/announce
+                udp://exodus.desync.com:6969/announce
+                udp://tracker.srv00.com:6969/announce
+                udp://tracker.ololosh.space:6969/announce
+                udp://isk.richardsw.club:6969/announce
+                udp://hificode.in:6969/announce
+                udp://glotorrents.pw:6969/announce
+                http://share.hkg-fansub.info:80/announce.php
+                udp://ttk2.nbaonlineservice.com:6969/announce
+                udp://tracker.zupix.online:6969/announce
+                udp://tracker.valete.tf:9999/announce
+                udp://tracker.tryhackx.org:6969/announce
+                udp://tracker.torrust-demo.com:6969/announce
+                udp://tracker.therarbg.to:6969/announce
+                udp://tracker.theoks.net:6969/announce
+                udp://tracker.skillindia.site:6969/announce
+                udp://tracker.plx.im:6969/announce
+                http://open.acgtracker.com:1096/announce
+                udp://tracker4.itzmx.com:2710/announce
+                udp://tracker3.itzmx.com:6961/announce
+                udp://tracker2.itzmx.com:6961/announce
+                udp://tracker1.itzmx.com:8080/announce
+                http://tracker4.itzmx.com:2710/announce
+                http://tracker3.itzmx.com:6961/announce
+                http://tracker2.itzmx.com:6961/announce
+                http://tracker1.itzmx.com:8080/announce
+                udp://tracker.publicbt.com:80/announce
+                udp://tracker.torrent.eu.org:451/announc
+            """.trimIndent()
+
+            TrackerListUpdateRequest(
+                enable = true,
+                trackers = trackers
+            ).sendToBackend()
+
+            AppSettings.settings.general.trackReset = false
+            AppSettings.save()
         }
     }
 

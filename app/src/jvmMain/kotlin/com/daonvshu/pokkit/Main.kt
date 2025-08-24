@@ -58,6 +58,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
+import coil3.compose.LocalPlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
@@ -69,10 +73,13 @@ import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.components.HSpacer
 import com.daonvshu.shared.database.Databases
 import com.daonvshu.shared.settings.AppSettings
+import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.PrimaryColors
+import kotlinx.coroutines.flow.collect
 import okhttp3.OkHttpClient
 import okio.Path
 import java.io.File
+import java.net.Proxy
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -153,35 +160,40 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
     }
 }
 
+@OptIn(DelicateCoilApi::class)
 fun main() = application {
     Databases.init()
 
-    setSingletonImageLoaderFactory { context ->
-        ImageLoader.Builder(context)
-            .crossfade(true)
-            .components {
-                add(
-                    OkHttpNetworkFetcherFactory(
-                        callFactory = {
-                            OkHttpClient.Builder()
-                                .proxy(AppSettings.getProxy())
-                                .build()
-                        }
-                    )
-                )
-            }
-            .memoryCache {
-                MemoryCache.Builder()
-                    .maxSizePercent(context, 0.25)
+    LaunchedEffect(Unit) {
+        AppSettings.proxyFlow.collect { proxy ->
+            SingletonImageLoader.setUnsafe { context ->
+                ImageLoader.Builder(context)
+                    .crossfade(true)
+                    .components {
+                        add(
+                            OkHttpNetworkFetcherFactory(
+                                callFactory = {
+                                    OkHttpClient.Builder()
+                                        .proxy(proxy)
+                                        .build()
+                                }
+                            )
+                        )
+                    }
+                    .memoryCache {
+                        MemoryCache.Builder()
+                            .maxSizePercent(context, 0.25)
+                            .build()
+                    }
+                    .diskCache {
+                        DiskCache.Builder()
+                            .directory(File(".cache/image_cache"))
+                            .maxSizePercent(0.02)
+                            .build()
+                    }
                     .build()
             }
-            .diskCache {
-                DiskCache.Builder()
-                    .directory(File(".cache/image_cache"))
-                    .maxSizePercent(0.02)
-                    .build()
-            }
-            .build()
+        }
     }
 
     var isOpen by remember { mutableStateOf(true) }

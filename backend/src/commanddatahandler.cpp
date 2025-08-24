@@ -32,11 +32,12 @@ struct ProxyInfoSync : DataDumpProtocol<ProxyInfoSync> {
         Type = 1
     };
 
+    DATA_KEY(bool, enabled);
     DATA_KEY(QString, proxyAddress);
     DATA_KEY(int, proxyPort);
 
     QList<DataReadInterface *> prop() override {
-        return { &proxyAddress, &proxyPort };
+        return { &enabled, &proxyAddress, &proxyPort };
     }
 };
 
@@ -61,11 +62,17 @@ CommandDataHandler::CommandDataHandler(IdentifyAuthConfirmedCallback* callback, 
     codecEngine.registerType<JsonCodec<TorrentRemoveRequest>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentRemoveRequest);
     codecEngine.registerType<TorrentStatusRefreshRequest>(downloadServiceProvider, &DownloadServiceProvider::refreshAllTorrentsStatus);
     codecEngine.registerType<JsonCodec<TorrentContentFetch2Request>>(downloadServiceProvider, &DownloadServiceProvider::onTorrentContentFetch2Request);
+    codecEngine.registerType<GlobalSpeedLimitRequest>(downloadServiceProvider, &DownloadServiceProvider::getGlobalSpeed);
+    codecEngine.registerType<JsonCodec<GlobalSpeedLimitUpdateRequest>>(downloadServiceProvider, &DownloadServiceProvider::updateGlobalSpeed);
+    codecEngine.registerType<TrackerListRequest>(downloadServiceProvider, &DownloadServiceProvider::getTrackersRequest);
+    codecEngine.registerType<JsonCodec<TrackerListUpdateRequest>>(downloadServiceProvider, &DownloadServiceProvider::updateTrackersRequest);
     //feedback
     codecEngine.registerType<TorrentContentFetchProgressUpdate, JsonCodec>();
     codecEngine.registerType<TorrentContentFetchResult, JsonCodec>();
     codecEngine.registerType<TorrentStatusList, JsonCodec>();
     codecEngine.registerType<TorrentSpeedUpdated, JsonCodec>();
+    codecEngine.registerType<GlobalSpeedLimitFeedback, JsonCodec>();
+    codecEngine.registerType<TrackerListFeedback, JsonCodec>();
 }
 
 void CommandDataHandler::addBuffer(const QByteArray &data) {
@@ -79,7 +86,7 @@ void CommandDataHandler::onIdentifyAuthRequest(const IdentifyAuthRequest &reques
 }
 
 void CommandDataHandler::onProxyInfoSync(const ProxyInfoSync &request) {
-    GlobalEnv::setProxy(request.proxyAddress(), request.proxyPort());
+    GlobalEnv::setProxy(request.enabled(), request.proxyAddress(), request.proxyPort());
 }
 
 void CommandDataHandler::publish(const std::function<QByteArray(protocol_codec::ProtocolCodecEngine &)> &getData) {

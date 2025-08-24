@@ -30,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import com.daonvshu.bangumi.pages.DownloadPage
 import com.daonvshu.bangumi.pages.MikanBangumiDetailPage
 import com.daonvshu.bangumi.pages.MikanDataView
+import com.daonvshu.bangumi.pages.SearchPage
+import com.daonvshu.bangumi.pages.SettingPage
 import com.daonvshu.shared.backendservice.BackendDataObserver
 import com.daonvshu.shared.backendservice.BackendService
 import com.daonvshu.shared.components.DashedDivider
@@ -113,6 +115,12 @@ fun BangumiMain() {
                     }
                     composable("download") {
                         DownloadPage(sharedVm)
+                    }
+                    composable("search") {
+                        SearchPage()
+                    }
+                    composable("setting") {
+                        SettingPage()
                     }
                 }
 

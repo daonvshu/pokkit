@@ -16,6 +16,8 @@ data class TorrentContentFetchRequest(
 enum class SpecialIntCommand(val value: Int) {
     TORRENT_CONTENT_FETCH_CANCEL(101),
     TORRENT_STATUS_REFRESH_REQUEST(206),
+    GLOBAL_SPEED_LIMIT_REQUEST(401),
+    TRACKER_LIST_REQUEST(404),
 }
 
 @Type(id = 200, codec = CodecType.JSON)
@@ -71,4 +73,28 @@ data class TorrentStatusList(
 data class TorrentSpeedUpdated(
     val downloadSpeed: String,
     val uploadSpeed: String
+)
+
+@Type(id = 402, codec = CodecType.JSON)
+data class GlobalSpeedLimitFeedback(
+    val download: Int,
+    val upload: Int
+)
+
+@Type(id = 403, codec = CodecType.JSON)
+data class GlobalSpeedLimitUpdate(
+    val download: Int,
+    val upload: Int
+)
+
+@Type(id = 405, codec = CodecType.JSON)
+data class TrackerListFeedback(
+    val enabled: Boolean,
+    val trackers: String,
+)
+
+@Type(id = 406, codec = CodecType.JSON)
+data class TrackerListUpdateRequest(
+    val enable: Boolean,
+    val trackers: String,
 )

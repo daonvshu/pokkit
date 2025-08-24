@@ -5,7 +5,7 @@
 
 class GlobalEnv {
 public:
-    static void setProxy(const QString& address, int port);
+    static void setProxy(bool enabled, const QString& address, int port);
 
     static QNetworkAccessManager* getNetworkAccessManager();
 
@@ -15,6 +15,7 @@ private:
     static GlobalEnv& instance();
 
 private:
+    bool enabled = false;
     QString proxyAddress;
     int proxyPort = 0;
 };

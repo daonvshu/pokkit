@@ -13,4 +13,8 @@ object BackendDataObserver {
     val torrentStatusList = MutableStateFlow<TorrentStatusList?>(null)
 
     val torrentSpeedUpdated = MutableStateFlow<TorrentSpeedUpdated?>(null)
+
+    val globalSpeedLimit = MutableStateFlow<GlobalSpeedLimitFeedback?>(null)
+
+    val trackerListSetting = MutableStateFlow<TrackerListFeedback?>(null)
 }

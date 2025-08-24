@@ -12,6 +12,7 @@ data class General(
     var bangumiLastSavePath: String = "",
     var autoCreateDir: Boolean = true,
     var torrentDeleteWithSrcFile: Boolean = true,
+    var trackReset: Boolean = true,
 
     val mikan: MikanGeneral = MikanGeneral(),
 )

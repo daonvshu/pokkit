@@ -2,7 +2,8 @@
 
 #include <qnetworkproxy.h>
 
-void GlobalEnv::setProxy(const QString &address, int port) {
+void GlobalEnv::setProxy(bool enabled, const QString &address, int port) {
+    instance().enabled = enabled;
     instance().proxyAddress = address;
     instance().proxyPort = port;
 }
@@ -17,7 +18,7 @@ GlobalEnv &GlobalEnv::instance() {
 
 QNetworkAccessManager *GlobalEnv::getNetworkAccessManager() {
     auto manager = new QNetworkAccessManager;
-    if (!instance().proxyAddress.isEmpty()) {
+    if (instance().enabled && !instance().proxyAddress.isEmpty()) {
         QNetworkProxy proxy;
         proxy.setType(QNetworkProxy::HttpProxy);
         proxy.setHostName(instance().proxyAddress);

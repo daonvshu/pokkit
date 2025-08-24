@@ -155,3 +155,59 @@ struct TorrentSpeedUpdated : public DataDumpProtocol<TorrentSpeedUpdated> {
         return { &downloadSpeed, &uploadSpeed };
     }
 };
+
+#define GlobalSpeedLimitRequest 401
+
+struct GlobalSpeedLimitFeedback : public DataDumpProtocol<GlobalSpeedLimitFeedback> {
+    enum {
+        Type = 402
+    };
+
+    DATA_KEY(int, download);
+    DATA_KEY(int, upload);
+
+    QList<DataReadInterface *> prop() override {
+        return { &download, &upload };
+    }
+};
+
+struct GlobalSpeedLimitUpdateRequest : public DataDumpProtocol<GlobalSpeedLimitUpdateRequest> {
+    enum {
+        Type = 403
+    };
+
+    DATA_KEY(int, download);
+    DATA_KEY(int, upload);
+
+    QList<DataReadInterface *> prop() override {
+        return { &download, &upload };
+    }
+};
+
+#define TrackerListRequest 404
+
+struct TrackerListFeedback : public DataDumpProtocol<TrackerListFeedback> {
+    enum {
+        Type = 405
+    };
+
+    DATA_KEY(bool, enabled);
+    DATA_KEY(QString, trackers);
+
+    QList<DataReadInterface *> prop() override {
+        return { &enabled, &trackers };
+    }
+};
+
+struct TrackerListUpdateRequest : public DataDumpProtocol<TrackerListUpdateRequest> {
+    enum {
+        Type = 406
+    };
+
+    DATA_KEY(bool, enable);
+    DATA_KEY(QString, trackers);
+
+    QList<DataReadInterface *> prop() override {
+        return { &enable, &trackers };
+    }
+};

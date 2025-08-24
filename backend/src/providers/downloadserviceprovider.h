@@ -29,6 +29,14 @@ public:
 
     void onTorrentContentFetch2Request(const TorrentContentFetch2Request& request);
 
+    void getGlobalSpeed();
+
+    void updateGlobalSpeed(const GlobalSpeedLimitUpdateRequest& request);
+
+    void getTrackersRequest();
+
+    void updateTrackersRequest(const TrackerListUpdateRequest& request);
+
 private:
     DataPublishInterface* publishInterface;
     QPointer<TorrentContentFetchTask> task;

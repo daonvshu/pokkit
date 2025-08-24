@@ -19,12 +19,16 @@ class CommandDataHandler {
         codec.registerType<TorrentPauseOrResumeRequest>()
         codec.registerType<TorrentRemoveRequest>()
         codec.registerType<TorrentContentFetch2Request>()
+        codec.registerType<GlobalSpeedLimitUpdate>()
+        codec.registerType<TrackerListUpdateRequest>()
         //response
         codec.registerType<TorrentContentFetchProgressUpdate>()
         codec.registerType<TorrentContentFetchResult>()
         codec.registerType<RequestOpenDir>()
         codec.registerType<TorrentStatusList>()
         codec.registerType<TorrentSpeedUpdated>()
+        codec.registerType<GlobalSpeedLimitFeedback>()
+        codec.registerType<TrackerListFeedback>()
     }
 
     fun handle(data: ByteArray) {
@@ -50,5 +54,15 @@ class CommandDataHandler {
     @Subscribe
     fun onTorrentSpeedUpdatedReceived(result: TorrentSpeedUpdated) {
         BackendDataObserver.torrentSpeedUpdated.value = result
+    }
+
+    @Subscribe
+    fun onGlobalSpeedLimitFeedbackReceived(result: GlobalSpeedLimitFeedback) {
+        BackendDataObserver.globalSpeedLimit.value = result
+    }
+
+    @Subscribe
+    fun onTrackerListSettingReceived(result: TrackerListFeedback) {
+        BackendDataObserver.trackerListSetting.value = result
     }
 }
