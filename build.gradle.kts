@@ -1,13 +1,11 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.compose")
-    id("org.jetbrains.kotlin.plugin.compose")
+    val kotlinVersion = "2.2.0"
+    val composeVersion= "1.8.2"
+    kotlin("multiplatform") version kotlinVersion apply false
+    kotlin("plugin.serialization") version kotlinVersion apply false
+    id("org.jetbrains.kotlin.plugin.compose") version kotlinVersion apply false
+    id("org.jetbrains.compose") version composeVersion apply false
 }
-
-group = "com.daonvshu"
-version = "1.0-SNAPSHOT"
 
 allprojects {
     repositories {

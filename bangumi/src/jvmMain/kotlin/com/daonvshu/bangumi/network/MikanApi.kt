@@ -5,9 +5,11 @@ import com.daonvshu.shared.utils.LogCollector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.converter.simplexml.SimpleXmlConverterFactory
 import java.net.Proxy
 
@@ -37,7 +39,9 @@ object MikanApi {
             .client(client)
             .baseUrl(HOST)
             .addConverterFactory(SimpleXmlConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(
+                Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
+            )
             .build()
             .create(MikanApiService::class.java)
     }

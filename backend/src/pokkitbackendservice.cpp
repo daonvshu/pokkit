@@ -13,8 +13,7 @@
 
 #include <qdebug.h>
 
-PokkitBackendService::PokkitBackendService(int argc, char **argv)
-    : QtSingleCoreApplication(argc, argv)
+PokkitBackendService::PokkitBackendService()
 {
     connect(&server, &QLocalServer::newConnection, this, &PokkitBackendService::newConnection);
 

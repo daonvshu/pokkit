@@ -4,9 +4,11 @@ import com.daonvshu.shared.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.net.Proxy
 
 object BgmTvApi {
@@ -32,7 +34,9 @@ object BgmTvApi {
         return Retrofit.Builder()
             .client(client)
             .baseUrl(HOST)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(
+                Json.asConverterFactory("application/json; charset=UTF8".toMediaType())
+            )
             .build()
             .create(BgmTvApiService::class.java)
     }

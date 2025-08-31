@@ -1,10 +1,14 @@
 package com.daonvshu.shared.backendservice.bean
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TorrentInfoPathData(
     val path: String,
     val size: Long,
 )
 
+@Serializable
 data class TorrentContentInfo(
     val srcName: String,
     val linkUrl: String,

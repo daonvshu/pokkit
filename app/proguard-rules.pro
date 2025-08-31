@@ -1,88 +1,76 @@
--keep class androidx.compose.runtime.** { *; }
+# =======================
+# Compose 相关保留规则
+# =======================
+-keep class androidx.compose.** { *; }
+-keepclassmembers class androidx.compose.runtime.** { *; }
+-keep class androidx.compose.ui.text.platform.ReflectionUtil { *; }
+-keep class androidx.compose.foundation.relocation.*Kt* { *; }
+
+# 保留桥接、inline 函数，防止被删或重写
+-keep class *Kt__* { *; }
+
+# =======================
+# AndroidX 其他库
+# =======================
 -keep class androidx.collection.** { *; }
 -keep class androidx.lifecycle.** { *; }
--keep class androidx.compose.ui.text.platform.ReflectionUtil { *; }
 
-# We're excluding Material 2 from the project as we're using Material 3
--dontwarn androidx.compose.material.**
-
-# Kotlinx coroutines rules seems to be outdated with the latest version of Kotlin and Proguard
+# =======================
+# Kotlinx Coroutines 相关
+# =======================
 -keep class kotlinx.coroutines.** { *; }
 -keep class kotlinx.coroutines.flow.** { *; }
 -keepclassmembers class kotlinx.coroutines.flow.** { *; }
-
 -dontwarn kotlinx.coroutines.flow.**
-
 -dontwarn kotlinx.coroutines.internal.**
 
 -keepclasseswithmembers class * {
     kotlinx.coroutines.CoroutineScope *(...);
 }
 
--keepattributes *Annotation*
+# =======================
+# Kotlin Serialization
+# =======================
+-keep class ** {
+    @kotlinx.serialization.Serializable *;
+}
+# 保留所有自动生成的 $$serializer 类
+-keepclassmembers class **$$serializer {
+    *;
+}
 
-# Retrofit does reflection on generic parameters. InnerClasses is required to use Signature and
-# EnclosingMethod is required to use InnerClasses.
+# =======================
+# Retrofit 相关规则
+# =======================
+# 避免 Retrofit 反射泛型、注解等信息丢失
 -keepattributes Signature, InnerClasses, EnclosingMethod
-
-# Retrofit does reflection on method and parameter annotations.
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
-
-# Keep annotation default values (e.g., retrofit2.http.Field.encoded).
 -keepattributes AnnotationDefault
 
-# Retain service method parameters when optimizing.
+# 保留 Retrofit 接口方法及参数，允许缩减混淆
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }
 
-# Ignore annotation used for build tooling.
--dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
-
-# Ignore JSR 305 annotations for embedding nullability information.
--dontwarn javax.annotation.**
-
-# Guarded by a NoClassDefFoundError try/catch and only used when on the classpath.
--dontwarn kotlin.Unit
-
-# Top-level functions that can only be used by Kotlin.
--dontwarn retrofit2.KotlinExtensions
--dontwarn retrofit2.KotlinExtensions$*
-
-# With R8 full mode, it sees no subtypes of Retrofit interfaces since they are created with a Proxy
-# and replaces all potential values with null. Explicitly keeping the interfaces prevents this.
+# R8 特殊处理避免接口混淆导致问题
 -if interface * { @retrofit2.http.* <methods>; }
 -keep,allowobfuscation interface <1>
-
-# Keep inherited services.
 -if interface * { @retrofit2.http.* <methods>; }
 -keep,allowobfuscation interface * extends <1>
 
-# With R8 full mode generic signatures are stripped for classes that are not
-# kept. Suspend functions are wrapped in continuations where the type argument
-# is used.
+# Suspended 函数相关保留
 -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
-# R8 full mode strips generic signatures from return types if not kept.
--if interface * { @retrofit2.http.* public *** *(...); }
--keep,allowoptimization,allowshrinking,allowobfuscation class <3>
-
-# With R8 full mode generic signatures are stripped for classes that are not kept.
+# Retrofit Response 保留
 -keep,allowobfuscation,allowshrinking class retrofit2.Response
 
-# OkHttp3
-# JSR 305 annotations are for embedding nullability information.
--dontwarn javax.annotation.**
+# 避免 Retrofit Kotlin Extensions 警告
+-dontwarn retrofit2.KotlinExtensions
+-dontwarn retrofit2.KotlinExtensions$*
 
-# Animal Sniffer compileOnly dependency to ensure APIs are compatible with older versions of Java.
--dontwarn org.codehaus.mojo.animal_sniffer.*
-
--dontwarn retrofit2.AndroidMainExecutor
--dontwarn android.os.**
--dontwarn android.annotation.**
-
-# OkHttp platform used only on JVM and when Conscrypt and other security providers are available.
-# May be used with robolectric or deliberate use of Bouncy Castle on Android
+# =======================
+# OkHttp & Okio 相关
+# =======================
 -dontwarn okhttp3.internal.platform.**
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
@@ -91,45 +79,47 @@
 -dontwarn okio.**
 -keep class okio.** { *; }
 
--keep class ** {
-    @kotlinx.serialization.Serializable *;
-}
+# =======================
+# 通用忽略警告
+# =======================
+# Animal Sniffer 相关
+-dontwarn org.codehaus.mojo.animal_sniffer.*
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 
-# 保留所有自动生成的 $$serializer 类
--keepclassmembers class **$$serializer {
-    *;
-}
-
-# 保留 Kotlin Metadata 注解
--keepattributes *Annotation*, InnerClasses, EnclosingMethod, Signature
-
-
-# 保留桥接文件生成的 Kotlin 元数据
--keep class androidx.compose.foundation.relocation.*Kt* { *; }
-
-# 保留 Kotlin Metadata 注解等
--keepattributes Signature, *Annotation*, InnerClasses, EnclosingMethod
-
-# 保留 Compose runtime/internals
--keep class androidx.compose.** { *; }
--keepclassmembers class androidx.compose.runtime.** { *; }
-
-# 避免桥接、inline 函数被删除或重写
--keep class *Kt__* { *; }
-
+# javax.annotation 相关（JSR 305 注解）
 -dontwarn javax.annotation.**
 
--dontwarn javax.xml.**
--keep class javax.xml.** { *; }
+# Android system warnings
+-dontwarn android.os.**
+-dontwarn android.annotation.**
 
--keep class kotlin.** { *; }
--keep class kotlin.coroutines.** { *; }
--keep class kotlin.sequences.** { *; }
--keep class kotlin.jvm.internal.** { *; }
+# Kotlin Unit 相关
+-dontwarn kotlin.Unit
+
+# =======================
+# Material 2 相关警告忽略（项目使用 Material 3）
+# =======================
+-dontwarn androidx.compose.material.**
+
+# =======================
+# 其他保留属性
+# =======================
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod, KotlinMetadata
+
+# 保留 Kotlin Metadata 注解及相关桥接文件生成的元数据
+-keepattributes *Annotation*, InnerClasses, EnclosingMethod, Signature
+
+# 如果使用 Kotlin 反射，保留其元数据
+# -keep class kotlin.Metadata { *; }
+-keep class kotlin.reflect.** { *; }
+-keep class kotlin.reflect.jvm.internal.** { *; }
+-keep class kotlin.reflect.jvm.internal.impl.utils.** { *; }
+-keepclassmembers class kotlin.reflect.jvm.internal.impl.utils.** { *; }
+-dontwarn kotlin.jvm.internal.**
+
+# 通用规则：Kotlin 支持反射与注解
+# -keepclassmembers class ** { @kotlin.Metadata *; }
 -dontwarn kotlin.**
--keepclassmembers class ** {
-    @kotlin.Metadata *;
-}
 
 # Exposed
 -keep class org.jetbrains.exposed.** { *; }
@@ -141,9 +131,21 @@
 
 -keep class org.sqlite.** { *; }
 
--keep class com.daonvshu.protocol.codec.annotations.**
--keep class com.daonvshu.protocol.** { *; }
+-keepattributes RuntimeVisibleAnnotations
+-keep class com.daonvshu.protocol.codec.annotations.Type
+-keep class com.daonvshu.protocol.codec.annotations.Subscribe
 -keep @com.daonvshu.protocol.codec.annotations.Type class * { *; }
+-keepclassmembers @com.daonvshu.protocol.codec.annotations.Type class * {
+    public <init>(...);
+ }
 -keepclassmembers class * {
-    @com.daonvshu.protocol.codec.annotations.Subscribe *;
+    @com.daonvshu.protocol.codec.annotations.Subscribe <methods>;
 }
+
+-dontwarn javax.xml.**
+-keep class javax.xml.** { *; }
+-keep class org.simpleframework.** { *; }
+
+# network bean
+-keep @org.simpleframework.xml.Root class * { *; }
+-keep @kotlinx.serialization.Serializable class * {*;}

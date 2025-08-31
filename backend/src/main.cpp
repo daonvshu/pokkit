@@ -1,9 +1,13 @@
 #include <qlogcollector.h>
+#include <qtsinglecoreapplication.h>
 
 #include "pokkitbackendservice.h"
 
 int main(int argc, char* argv[]) {
-    PokkitBackendService service(argc, argv);
+    QtSingleCoreApplication a(argc, argv);
+    if (a.isRunning()) {    // 第二个实例直接退出
+        return 0;
+    }
 
     logcollector::styleConfig
             .windowApp()
@@ -13,11 +17,8 @@ int main(int argc, char* argv[]) {
             ;
     logcollector::QLogCollector::instance().registerLog();
 
-    if (service.isRunning()) {
-        qCritical() << "Service already running.";
-        return 0;
-    }
-
+    PokkitBackendService service;
     service.start();
-    return service.exec();
+
+    return a.exec();
 }

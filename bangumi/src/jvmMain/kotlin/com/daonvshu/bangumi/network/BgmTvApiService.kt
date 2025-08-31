@@ -1,8 +1,10 @@
 package com.daonvshu.bangumi.network
 
+import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Path
 
+@Serializable
 data class BgmTvItem(
     val summary: String,
     val eps: Int,

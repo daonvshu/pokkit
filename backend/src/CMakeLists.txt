@@ -15,7 +15,7 @@ include(../3rdparty/qtsingleapplication/src.cmake)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(${PROJECT_NAME} WIN32
+add_executable(${PROJECT_NAME}
     main.cpp
 
     pokkitbackendservice.h
@@ -52,9 +52,7 @@ target_link_libraries(${PROJECT_NAME}
     qbt_base
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE /MD)
-
-set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE})
+set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/../build/main-release/app/pokkit)
 set(OUTPUT_FILE_PATH ${INSTALL_DIR}/${PROJECT_NAME})
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
@@ -66,6 +64,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${PROJECT_NAME}> ${INSTALL_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LibtorrentRasterbar_DIR}/../../../bin/torrent-rasterbar.dll ${INSTALL_DIR}
         COMMAND ${QT_WINDEPLOYQT_EXECUTABLE} --no-translations ${INSTALL_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>
     )
 endif()

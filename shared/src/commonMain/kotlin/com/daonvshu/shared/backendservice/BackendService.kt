@@ -10,16 +10,18 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import java.io.Closeable
-import java.io.FileNotFoundException
 import java.io.RandomAccessFile
 import kotlin.String
 
+@Serializable
 @Type(id = 0, codec = CodecType.JSON)
 data class IdentifyAuthRequest(
     val role: String = "Pokkit/ReadChannel"
 )
 
+@Serializable
 @Type(id = 1, codec = CodecType.JSON)
 data class ProxyInfoSync(
     val enabled: Boolean,
@@ -47,7 +49,6 @@ object BackendService : Closeable {
     val dataHandler = CommandDataHandler()
 
     fun sendRaw(data: ByteArray) {
-        tryCreatePipeIfNeeded()
         coroutineScope.launch {
             try {
                 writePipe?.write(data)
@@ -69,14 +70,14 @@ object BackendService : Closeable {
     fun tryCreatePipeIfNeeded(): Boolean {
         if (readPipe != null && writePipe != null) return true
         try {
-            LogCollector.addLog("try create connection to backend service...")
+            println("try create connection to backend service...")
             readPipe = RandomAccessFile("""\\.\pipe\$PIPE_NAME""", "rw")
             writePipe = RandomAccessFile("""\\.\pipe\$PIPE_NAME""", "rw")
 
+            readPipe?.write(dataHandler.codec.encode(IdentifyAuthRequest()))
             readJob?.cancel()
             readJob = coroutineScope.launch {
                 try {
-                    readPipe?.write(dataHandler.codec.encode(IdentifyAuthRequest()))
                     val buffer = ByteArray(256)
                     while (isActive) {
                         val bytesRead = readPipe?.read(buffer) ?: -1
@@ -92,15 +93,17 @@ object BackendService : Closeable {
                 }
                 readPipe = null
             }
-            updateProxyInfo()
-            enableTrackOnFirstLoad()
-            return true
-        } catch (e: FileNotFoundException) {
+            if (readPipe != null) {
+                updateProxyInfo()
+                enableTrackOnFirstLoad()
+                return true
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
-            LogCollector.addLog("backend service not found!")
+            println("backend service not found!")
             BackendDataObserver.backendServiceConnectError.value = "本地服务无法连接!"
-            return false
         }
+        return false
     }
 
     private fun enableTrackOnFirstLoad() {

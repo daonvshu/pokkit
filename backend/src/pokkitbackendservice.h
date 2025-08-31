@@ -5,13 +5,11 @@
 #include <qlocalserver.h>
 #include <qlocalsocket.h>
 
-#include "qtsinglecoreapplication.h"
-
 #include "commanddatahandler.h"
 
-class PokkitBackendService : public QtSingleCoreApplication, public IdentifyAuthConfirmedCallback {
+class PokkitBackendService : public QObject, public IdentifyAuthConfirmedCallback {
 public:
-    PokkitBackendService(int argc, char **argv);
+    PokkitBackendService();
 
     void onReadChannelReady() override;
 

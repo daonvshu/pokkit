@@ -84,6 +84,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okio.Path
 import java.io.File
@@ -189,10 +191,12 @@ fun main() = application {
 
     val scope = rememberCoroutineScope { Dispatchers.IO }
     LaunchedEffect(Unit) {
-        try {
-            ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
-        } catch (e: Exception) {
-            LogCollector.addLog(e.message ?: "")
+        withContext(Dispatchers.IO) {
+            try {
+                ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
+            } catch (e: Exception) {
+                LogCollector.addLog(e.message ?: "")
+            }
         }
         delay(200)
 
@@ -201,6 +205,7 @@ fun main() = application {
         while (tryConnectSize-- > 0) {
             success = BackendService.tryCreatePipeIfNeeded()
             if (success) {
+                BackendDataObserver.backendServiceConnectError.value = ""
                 break
             }
             delay(500)

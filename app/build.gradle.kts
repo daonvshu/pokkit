@@ -64,14 +64,42 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "pokkit"
             packageVersion = version.toString()
+            outputBaseDir = rootProject.layout.projectDirectory.dir("build")
 
             buildTypes.release.proguard {
                 configurationFiles.from(project.file("proguard-rules.pro"))
             }
+
+            modules("java.sql")
+            windows {
+                console = true
+            }
+
+            jvmArgs += listOf(
+                // 禁用打包 MSVC runtime
+                "--strip-native-commands",
+                "--strip-native-debug-symbols"
+            )
         }
     }
 }
 
 tasks.named("compileKotlinJvm") {
     dependsOn(generateBuildConfig)
+}
+
+tasks.matching {  it.name == "createReleaseDistributable"}.configureEach {
+    doLast {
+        //clear msvc runtime
+        val runtimeDir = file(rootProject.layout.projectDirectory.dir("build/main-release/app/pokkit/runtime/bin"))
+        runtimeDir.listFiles()?.forEach { f ->
+            if (f.name.startsWith("msvcp") ||
+                f.name.startsWith("vcruntime") ||
+                f.name.startsWith("ucrtbase") ||
+                f.name.startsWith("api-ms-win")) {
+                println("Deleting bundled runtime dll: ${f.name}")
+                f.delete()
+            }
+        }
+    }
 }

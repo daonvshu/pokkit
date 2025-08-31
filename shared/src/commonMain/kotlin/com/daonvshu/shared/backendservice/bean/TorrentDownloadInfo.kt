@@ -1,10 +1,14 @@
 package com.daonvshu.shared.backendservice.bean
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TorrentDownloadPath(
     val path: String,
     val ignored: Boolean
 )
 
+@Serializable
 data class TorrentDownloadInfo(
     val content: String,
     val paths: List<TorrentDownloadPath>,
@@ -46,6 +50,7 @@ enum class TorrentDownloadStateType {
     }
 }
 
+@Serializable
 data class TorrentDisplayInfo(
     val torrentHash: String,
     val state: Int, //TorrentStateType
