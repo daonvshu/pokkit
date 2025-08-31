@@ -1,13 +1,15 @@
 #include <qlogcollector.h>
-#include <qtsinglecoreapplication.h>
+#include <qtsingleapplication.h>
 
 #include "pokkitbackendservice.h"
 
 int main(int argc, char* argv[]) {
-    QtSingleCoreApplication a(argc, argv);
+    QtSingleApplication a(argc, argv);
     if (a.isRunning()) {    // 第二个实例直接退出
         return 0;
     }
+
+    QApplication::setQuitOnLastWindowClosed(false);
 
     logcollector::styleConfig
             .windowApp()

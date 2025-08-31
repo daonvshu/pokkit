@@ -1,6 +1,6 @@
 package com.daonvshu.pokkit
 
-import com.daonvshu.bangumi.BangumiMain
+import com.daonvshu.pokkit.bangumi.BangumiMain
 import com.daonvshu.shared.font.Calista
 import com.daonvshu.shared.font.ChillRoundGothic
 import androidx.compose.animation.animateColorAsState
@@ -26,7 +26,6 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,50 +45,40 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberNotification
-import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
-import androidx.compose.ui.window.singleWindowApplication
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.ImageLoader
-import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
-import coil3.compose.LocalPlatformContext
-import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.daonvshu.BuildConfig
-import com.daonvshu.shared.backendservice.BackendDataObserver
-import com.daonvshu.shared.backendservice.BackendService
+import com.daonvshu.pokkit.backendservice.BackendDataObserver
+import com.daonvshu.pokkit.backendservice.BackendService
 import com.daonvshu.shared.components.HSpacer
-import com.daonvshu.shared.database.Databases
-import com.daonvshu.shared.settings.AppSettings
+import com.daonvshu.pokkit.database.Databases
+import com.daonvshu.pokkit.settings.AppSettings
+import com.daonvshu.shared.generated.resources.Res
+import com.daonvshu.shared.generated.resources.logo
 import com.daonvshu.shared.utils.LogCollector
 import com.daonvshu.shared.utils.PrimaryColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
-import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
-import okio.Path
+import org.jetbrains.compose.resources.painterResource
 import java.io.File
-import java.net.Proxy
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -224,6 +213,7 @@ fun main() = application {
             onCloseRequest = {},
             undecorated = true,
             transparent = true,
+            icon = painterResource(Res.drawable.logo),
             state = rememberWindowState(width = 1.dp, height = 1.dp),
         ) {}
     } else if (isOpen) {
@@ -237,6 +227,7 @@ fun main() = application {
             undecorated = true,
             resizable = true,
             transparent = true,
+            icon = painterResource(Res.drawable.logo),
             state = windowState,
         ) {
             LaunchedEffect(Unit) {
