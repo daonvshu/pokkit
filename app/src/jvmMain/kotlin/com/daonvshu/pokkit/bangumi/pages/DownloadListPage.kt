@@ -208,7 +208,11 @@ fun DownloadListPage(sharedVm: BangumiSharedVm) {
                                             val downloadType = TorrentDownloadStateType.of(state!!.downloadState)
                                             ShapeIconButton(
                                                 resource = Res.drawable.ic_play,
-                                                color = if (downloadType != TorrentDownloadStateType.Uploading) PrimaryColors.Icon_Button_Disabled else PrimaryColors.Icon_Button_Primary
+                                                color = when {
+                                                    downloadType != TorrentDownloadStateType.Uploading -> PrimaryColors.Icon_Button_Disabled
+                                                    torrent.record.played -> PrimaryColors.LIME
+                                                    else -> PrimaryColors.Icon_Button_Primary
+                                                }
                                             ) {
                                                 if (downloadType == TorrentDownloadStateType.Uploading) {
                                                     vm.playTarget(torrent)

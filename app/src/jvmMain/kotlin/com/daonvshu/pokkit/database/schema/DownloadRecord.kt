@@ -27,6 +27,7 @@ data class DownloadRecord(
     var saveDir: String, //保存路径
     val autoCreateDir: Boolean, //自动创建目录
     val finished: Boolean = false,
+    var played: Boolean = false,
 ) {
     companion object {
         fun empty() = DownloadRecord(
@@ -41,7 +42,8 @@ data class DownloadRecord(
             fansub = "",
             saveDir = "",
             autoCreateDir = true,
-            finished = false
+            finished = false,
+            played = false,
         )
     }
 }
@@ -59,6 +61,7 @@ class DownloadRecordService {
         val saveDir = text("save_dir")
         val autoCreateDir = bool("auto_create_dir").default(true)
         val finished = bool("finished").default(false)
+        val played = bool("played").default(false)
     }
 
     init {
@@ -81,6 +84,7 @@ class DownloadRecordService {
                 it[DownloadRecords.saveDir] = record.saveDir
                 it[DownloadRecords.autoCreateDir] = record.autoCreateDir
                 it[DownloadRecords.finished] = record.finished
+                it[DownloadRecords.played] = record.played
             }[DownloadRecords.id].value
         }
     }
@@ -100,7 +104,8 @@ class DownloadRecordService {
                     fansub = it[DownloadRecords.fansub],
                     saveDir = it[DownloadRecords.saveDir],
                     autoCreateDir = it[DownloadRecords.autoCreateDir],
-                    finished = it[DownloadRecords.finished]
+                    finished = it[DownloadRecords.finished],
+                    played = it[DownloadRecords.played],
                 )
             }
         }
@@ -126,7 +131,8 @@ class DownloadRecordService {
                         fansub = it[DownloadRecords.fansub],
                         saveDir = it[DownloadRecords.saveDir],
                         autoCreateDir = it[DownloadRecords.autoCreateDir],
-                        finished = it[DownloadRecords.finished]
+                        finished = it[DownloadRecords.finished],
+                        played = it[DownloadRecords.played],
                     )
                 }
         }
@@ -135,6 +141,12 @@ class DownloadRecordService {
     fun makeFinished(recordId: Int) = dbQuery {
         DownloadRecords.update({ DownloadRecords.id.eq(recordId) }) {
             it[DownloadRecords.finished] = true
+        }
+    }
+
+    fun makePlayed(recordId: Int) = dbQuery {
+        DownloadRecords.update({ DownloadRecords.id.eq(recordId) }) {
+            it[DownloadRecords.played] = true
         }
     }
 

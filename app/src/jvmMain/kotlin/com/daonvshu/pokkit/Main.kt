@@ -189,7 +189,7 @@ fun main() = application {
         }
         delay(200)
 
-        var tryConnectSize = 5
+        var tryConnectSize = 20
         var success = false
         while (tryConnectSize-- > 0) {
             success = BackendService.tryCreatePipeIfNeeded()

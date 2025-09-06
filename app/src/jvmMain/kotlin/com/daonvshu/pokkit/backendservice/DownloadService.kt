@@ -1,4 +1,3 @@
-@file:Suppress("PROVIDED_RUNTIME_TOO_LOW", "INLINE_CLASSES_NOT_SUPPORTED")
 package com.daonvshu.pokkit.backendservice
 
 import com.daonvshu.protocol.codec.CodecType

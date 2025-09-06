@@ -67,7 +67,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-kotlin-datetime:1.0.0-beta-2")
                 implementation("org.jetbrains.exposed:exposed-json:1.0.0-beta-2")
                 implementation("org.xerial:sqlite-jdbc:3.44.1.0")
-                implementation(files("src/libs/ProtocolCodecEngine-1.0.2.jar"))
+                implementation(files("src/libs/ProtocolCodecEngine-1.0.3.jar"))
             }
 
             kotlin.srcDir(generateBuildConfig.map { it.outputs.files })

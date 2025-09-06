@@ -17,6 +17,7 @@ object MigrationRunner {
         MigrationV1,
         MigrationV2,
         MigrationV3,
+        MigrationV4,
     )
 
     fun runAllMigrations(database: Database) {

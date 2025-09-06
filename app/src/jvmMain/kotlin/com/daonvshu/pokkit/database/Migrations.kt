@@ -45,3 +45,13 @@ object MigrationV3: Migration {
         transaction.exec("ALTER TABLE downloadrecord ADD COLUMN \"auto_create_dir\" BOOLEAN DEFAULT TRUE;")
     }
 }
+
+object MigrationV4: Migration {
+    override val version: Int = 4
+    override val description: String = "Add column 'played' for download record"
+    override val targetTb: Table = DownloadRecordService.DownloadRecords
+
+    override fun apply(transaction: JdbcTransaction) {
+        transaction.exec("ALTER TABLE downloadrecord ADD COLUMN \"played\" BOOLEAN DEFAULT FALSE;")
+    }
+}

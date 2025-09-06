@@ -194,6 +194,16 @@ class DownloadListPageVm(private val sharedVm: BangumiSharedVm): ViewModel() {
     fun playTarget(torrent: DownloadItemData) {
         val fileSaveDir = torrent.data.value!!.filePath
         Desktop.getDesktop().open(File(fileSaveDir + "\\" + torrent.record.torrentName))
+        // make played
+        Databases.downloadRecordService.makePlayed(torrent.record.id)
+        displayData.value = displayData.value?.deepCopy(true, nodeProducer = {
+            if (it.data != null) {
+                if (torrent.record.id == it.data!!.record.id) {
+                    it.data!!.record.played = true
+                }
+            }
+            return@deepCopy it
+        })
     }
 
     fun removeTarget(torrent: DownloadItemData, removeSrc: Boolean) {
