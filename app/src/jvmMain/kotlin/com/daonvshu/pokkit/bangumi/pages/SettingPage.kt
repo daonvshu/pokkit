@@ -32,6 +32,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.daonvshu.shared.components.CustomTextArea
 import com.daonvshu.shared.components.InputColors
 import com.daonvshu.shared.components.NormalCheckbox
+import com.daonvshu.shared.components.StandardButton
+import com.daonvshu.shared.components.StandardButtonSize
 import com.daonvshu.shared.components.VSpacer
 import com.daonvshu.shared.styles.TextStyleProvider
 import com.daonvshu.shared.utils.PrimaryColors
@@ -64,6 +66,7 @@ fun SettingPage() {
             ) {
                 SpeedSettingRow(vm)
                 ProxySettingRow(vm)
+                OtherSettingRow(vm)
                 TrackerListRow(vm)
             }
 
@@ -155,6 +158,29 @@ private fun ProxySettingRow(vm: SettingPageVm) {
                     borderInFocus = PrimaryColors.Bangumi_Primary
                 )
             )
+        }
+    }
+}
+
+@Composable
+private fun OtherSettingRow(vm: SettingPageVm) {
+    Column {
+        TitleRow(title = "其他")
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val bgmDbInfo by vm.bgmDbInfo.collectAsStateWithLifecycle()
+            Text(text = "BangumiData版本：${bgmDbInfo.dbVersion} ${bgmDbInfo.generatedAt}")
+
+            StandardButton(
+                text = "更新",
+                color = PrimaryColors.Button_Normal_Primary,
+                size = StandardButtonSize.SMALL,
+            ) {
+                vm.updateBgmDb()
+            }
         }
     }
 }

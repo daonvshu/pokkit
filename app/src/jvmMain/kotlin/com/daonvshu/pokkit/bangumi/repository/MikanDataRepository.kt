@@ -1,6 +1,5 @@
 package com.daonvshu.pokkit.bangumi.repository
 
-import com.daonvshu.pokkit.bangumi.network.BgmListApi
 import com.daonvshu.pokkit.bangumi.network.BgmTvApi
 import com.daonvshu.pokkit.bangumi.network.MikanApi
 import com.daonvshu.pokkit.bangumi.utils.MikanDataParseUtil
@@ -132,47 +131,13 @@ open class MikanDataRepositoryImpl : MikanDataRepositoryInterface {
         LogCollector.addLog("fetch bangumi detail...")
         val detailData = BgmTvApi.apiService.getBangumiDetail(bangumiId)
 
-        val seasonTime = item.seasonTime
-        val date = Instant.ofEpochMilli(seasonTime)
-            .atZone(ZoneId.systemDefault())
-
-        val year = date.year // 获取年份
-        val season = when(date.monthValue) { // 月份（1-12）
-            1,2,3 -> 1
-            4,5,6 -> 2
-            7,8,9 -> 3
-            10,11,12 -> 4
-            else -> 1
-        }
-        LogCollector.addLog("fetch bangumi list info...")
-        //TODO: 跨季度可能无法获取，需要读取数据库第一个记录，或者通过起始时间计算季度
-        val bgmItems = BgmListApi.apiService.getBangumiList(year, season)
-        val target = bgmItems.items.firstOrNull { item ->
-            item.sites.any {
-                it.id == bangumiId.toString()
-            }
-        }
-
-        val sites = if (target != null) {
-            LogCollector.addLog("fetch site meta data...")
-            val siteMeta = BgmListApi.apiService.getSiteMeta()
-            val siteList = target.sites.map { site ->
-                val meta = siteMeta[site.site]
-                val url = meta?.urlTemplate?.replace("{{id}}", URLEncoder.encode(site.id, "UTF-8"))
-                "${meta?.title ?: " "},$url,${meta?.type ?: " "}"
-            }.filter {
-                it.isNotEmpty()
-            }
-            siteList.joinToString(",")
-        } else {
-            LogCollector.addLog("get site meta fail!")
-            ""
-        }
+        LogCollector.addLog("fetch bangumi detail from db...")
+        val detailData2 = BangumiDataDbRepository.getData(bangumiId)
 
         val summary = detailData.summary
-        val officialSite = target?.officialSite ?: ""
+        val officialSite = detailData2.officialSite ?: ""
         val eps = detailData.eps
-        Databases.mikanDataRecordService.updateDetailInfo(item.mikanId, bangumiId, summary, officialSite, eps, sites)
+        Databases.mikanDataRecordService.updateDetailInfo(item.mikanId, bangumiId, summary, officialSite, eps, detailData2.sites ?: "")
 
         return true
     }

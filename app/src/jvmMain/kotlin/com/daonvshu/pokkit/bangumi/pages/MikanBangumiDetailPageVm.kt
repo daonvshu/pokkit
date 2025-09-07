@@ -81,17 +81,20 @@ class MikanBangumiDetailPageVm(var data: MikanDataRecord): ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (MikanDataRepository.get().updateDetail(data)) {
-                    MikanDataRepository.get().getDataById(data.mikanId)?.let {
-                        data = it
+                    val newData = MikanDataRepository.get().getDataById(data.mikanId)
+                    if (newData != null) {
+                        data = newData
                         refreshUi()
                         LogCollector.addLog("fetch detail finished.")
+                    } else {
+                        LogCollector.addLog("update detail info fail, cannot load cache!")
                     }
                 } else {
-                    LogCollector.addLog("update detail info fail!")
+                    LogCollector.addLog("update detail info fail, cannot find detail info!")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                LogCollector.addLog("fetch detail fail!")
+                LogCollector.addLog("fetch detail fail with exception!")
             }
         }
     }

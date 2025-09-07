@@ -139,7 +139,7 @@ class MikanDataRecordService {
                     sites = it[MikanDataRecords.sites]
                 )
             }
-            .singleOrNull()
+            .lastOrNull()
     }
 
     fun updateFavorite(record: MikanDataRecord) = dbQuery {

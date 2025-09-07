@@ -8,10 +8,14 @@ import com.daonvshu.pokkit.backendservice.ProxyInfoSync
 import com.daonvshu.pokkit.backendservice.SpecialIntCommand
 import com.daonvshu.pokkit.backendservice.TrackerListUpdateRequest
 import com.daonvshu.pokkit.backendservice.sendToBackend
+import com.daonvshu.pokkit.bangumi.repository.BangumiDataDbRepository
+import com.daonvshu.pokkit.bangumi.repository.BangumiDbInfo
 import com.daonvshu.pokkit.settings.AppSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class SettingPageVm : ViewModel() {
@@ -25,6 +29,9 @@ class SettingPageVm : ViewModel() {
     val proxyEnabled = MutableStateFlow(AppSettings.settings.general.proxyEnabled)
     val proxyAddress = MutableStateFlow(AppSettings.settings.general.proxyAddress)
     val proxyPort = MutableStateFlow(AppSettings.settings.general.proxyPort)
+
+    // 其他设置
+    val bgmDbInfo = MutableStateFlow(BangumiDataDbRepository.getDbInfo())
 
     // Trackers设置
     val trackerEnabled = MutableStateFlow(false)
@@ -71,6 +78,18 @@ class SettingPageVm : ViewModel() {
             proxyAddress = AppSettings.settings.general.proxyAddress,
             proxyPort = AppSettings.settings.general.proxyPort,
         ).sendToBackend()
+    }
+
+    fun updateBgmDb() {
+        viewModelScope.launch(Dispatchers.IO) {
+            bgmDbInfo.value = BangumiDbInfo("更新中...", "")
+            try {
+                BangumiDataDbRepository.updateDb()
+                bgmDbInfo.value = BangumiDataDbRepository.getDbInfo()
+            } catch (_: Exception) {
+                bgmDbInfo.value = BangumiDbInfo("更新失败", "")
+            }
+        }
     }
 
     fun updateTrackSetting() {
