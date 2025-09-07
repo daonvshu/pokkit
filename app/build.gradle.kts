@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.daonvshu"
-version = "3.0.0"
+version = "3.0.1"
 
 val generateBuildConfig by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/buildConfig")
