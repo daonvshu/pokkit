@@ -7,14 +7,16 @@ using namespace QDataUtil;
 
 struct TorrentDownloadPath : public DataDumpInterface {
     DATA_KEY(QString, path);
+    DATA_KEY(int, pathIndex);
     DATA_KEY(bool, ignored);
 
     QList<DataReadInterface *> prop() override {
-        return { &path, &ignored };
+        return { &path, &pathIndex, &ignored };
     }
 
     TorrentDownloadPath& operator=(const TorrentDownloadPath& other) {
         path = other.path();
+        pathIndex = other.pathIndex();
         ignored = other.ignored();
         return *this;
     }

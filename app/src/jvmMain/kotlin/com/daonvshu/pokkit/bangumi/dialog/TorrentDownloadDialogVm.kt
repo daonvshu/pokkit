@@ -140,9 +140,10 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
                     paths = torrents.map { path ->
                         TorrentDownloadPath(
                             path = path.filePath,
+                            pathIndex = path.filePathIndex,
                             ignored = path.ignored
                         )
-                    }
+                    }.sortedBy { it.pathIndex }
                 ))
             }
             TorrentDownloadRequest(
@@ -191,7 +192,9 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
     private fun parseTorrentLinks(data: TorrentContentFetchResult) {
         val root = TreeNode<TorrentNodeData>("/", null)
         data.data.forEach { content ->
+            var pathIndex = 0
             content.filePaths.forEach { path ->
+                pathIndex++
                 var folders = path.path.split("\\").drop(1)
                 if (folders.isEmpty()) {
                     folders = listOf(path.path)
@@ -217,6 +220,7 @@ class TorrentDownloadDialogVm(var data: MikanDataRecord?, val fanSub: String?, t
                             torrentInfoHash = content.torrentInfoHash,
                             torrentContent = content.torrentContent,
                             filePath = path.path,
+                            filePathIndex = pathIndex,
                             itemSize = path.size
                         ) else null
                     )

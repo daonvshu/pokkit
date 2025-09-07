@@ -3,6 +3,7 @@
 #include "utils/globalenv.h"
 
 #include "providers/downloadserviceprovider.h"
+#include "base/net/proxyconfigurationmanager.h"
 
 #include <qtimer.h>
 #include <qfile.h>
@@ -87,6 +88,13 @@ void CommandDataHandler::onIdentifyAuthRequest(const IdentifyAuthRequest &reques
 
 void CommandDataHandler::onProxyInfoSync(const ProxyInfoSync &request) {
     GlobalEnv::setProxy(request.enabled(), request.proxyAddress(), request.proxyPort());
+    Net::ProxyConfiguration config;
+    if (request.enabled()) {
+        config.type = Net::ProxyType::SOCKS5;
+        config.ip = request.proxyAddress();
+        config.port = request.proxyPort();
+    }
+    Net::ProxyConfigurationManager::instance()->setProxyConfiguration(config);
 }
 
 void CommandDataHandler::publish(const std::function<QByteArray(protocol_codec::ProtocolCodecEngine &)> &getData) {

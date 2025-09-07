@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TorrentDownloadPath(
     val path: String,
-    val ignored: Boolean
+    val pathIndex: Int,
+    val ignored: Boolean,
 )
 
 @Serializable

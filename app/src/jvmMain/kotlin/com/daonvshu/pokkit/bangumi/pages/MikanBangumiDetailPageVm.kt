@@ -25,6 +25,7 @@ data class TorrentNodeData(
     val torrentInfoHash: String,
     val torrentContent: String,
     val filePath: String,
+    val filePathIndex: Int,
     val itemSize: Long,
     var ignored: Boolean = false, //仅用于下载时使用
 )
