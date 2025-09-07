@@ -79,6 +79,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jetbrains.compose.resources.painterResource
 import java.io.File
+import java.io.RandomAccessFile
+import java.nio.channels.FileLock
+import java.nio.file.Paths
 
 object TrayIcon : Painter() {
     override val intrinsicSize = Size(256f, 256f)
@@ -174,153 +177,179 @@ private fun WindowScope.AppWindowTitleBar(viewModel: MainViewModel) = WindowDrag
     }
 }
 
+object SingleInstance {
+    private var lock: FileLock? = null
+
+    fun tryLock(lockFileName: String = "pokkit_app.lock"): Boolean {
+        return try {
+            val file = Paths.get(System.getProperty("java.io.tmpdir"), lockFileName).toFile()
+            val channel = RandomAccessFile(file, "rw").channel
+            lock = channel.tryLock()
+            lock != null
+        } catch (_: Exception) {
+            false
+        }
+    }
+}
+
 @OptIn(DelicateCoilApi::class)
-fun main() = application {
-    var initFinished by remember { mutableStateOf(false) }
-
-    val scope = rememberCoroutineScope { Dispatchers.IO }
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            try {
-                ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
-            } catch (e: Exception) {
-                LogCollector.addLog(e.message ?: "")
-            }
-        }
-        delay(200)
-
-        var tryConnectSize = 20
-        var success = false
-        while (tryConnectSize-- > 0) {
-            success = BackendService.tryCreatePipeIfNeeded()
-            if (success) {
-                BackendDataObserver.backendServiceConnectError.value = ""
-                break
-            }
-            delay(500)
-        }
-        if (!success) {
-            throw RuntimeException("Backend service cannot not started!")
-        }
-
-        Databases.init()
-        initFinished = true
+fun main() {
+    if (!SingleInstance.tryLock()) {
+        println("frontend app already running!")
+        return
     }
 
-    var isOpen by remember { mutableStateOf(true) }
-    if (!initFinished) {
-        Window(
-            onCloseRequest = {},
-            undecorated = true,
-            transparent = true,
-            icon = painterResource(Res.drawable.logo),
-            state = rememberWindowState(width = 1.dp, height = 1.dp),
-        ) {}
-    } else if (isOpen) {
-        val windowState = rememberWindowState(width = 1280.dp, height = 768.dp)
-        Window(
-            onCloseRequest = {
-                scope.cancel()
-                isOpen = false
-                BackendService.close()
-            },
-            undecorated = true,
-            resizable = true,
-            transparent = true,
-            icon = painterResource(Res.drawable.logo),
-            state = windowState,
-        ) {
-            LaunchedEffect(Unit) {
-                AppSettings.proxyFlow.collect { proxy ->
-                    SingletonImageLoader.setUnsafe { context ->
-                        ImageLoader.Builder(context)
-                            .crossfade(true)
-                            .components {
-                                add(
-                                    OkHttpNetworkFetcherFactory(
-                                        callFactory = {
-                                            OkHttpClient.Builder()
-                                                .proxy(proxy)
-                                                .build()
-                                        }
-                                    )
-                                )
-                            }
-                            .memoryCache {
-                                MemoryCache.Builder()
-                                    .maxSizePercent(context, 0.25)
-                                    .build()
-                            }
-                            .diskCache {
-                                DiskCache.Builder()
-                                    .directory(File(".cache/image_cache"))
-                                    .maxSizePercent(0.02)
-                                    .build()
-                            }
-                            .build()
+    application {
+        var initFinished by remember { mutableStateOf(false) }
+
+        val scope = rememberCoroutineScope { Dispatchers.IO }
+        LaunchedEffect(Unit) {
+            if (System.getenv("RunMode").lowercase() != "debug") {
+                withContext(Dispatchers.IO) {
+                    try {
+                        ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
+                    } catch (e: Exception) {
+                        LogCollector.addLog(e.message ?: "")
                     }
                 }
+                delay(200)
+            } else {
+                println("frontend app run debug mode...")
             }
 
-            val mainVm = viewModel { MainViewModel() }
-            val selectedMenuItem by mainVm.selectedMenuIndex.collectAsStateWithLifecycle()
-            val selectedColor by animateColorAsState(mainVm.menuItems[selectedMenuItem].color)
-
-            LaunchedEffect(mainVm.selectedMenuIndex) {
-                mainVm.selectedMenuIndex.collect {
-                    if (it == 2) {
-                        isOpen = false
-                    }
+            var tryConnectSize = 20
+            var success = false
+            while (tryConnectSize-- > 0) {
+                success = BackendService.tryCreatePipeIfNeeded()
+                if (success) {
+                    BackendDataObserver.backendServiceConnectError.value = ""
+                    break
                 }
+                delay(500)
+            }
+            if (!success) {
+                throw RuntimeException("Backend service cannot not started!")
             }
 
-            MaterialTheme(
-                typography = Typography(
-                    defaultFontFamily = ChillRoundGothic()
-                )
+            Databases.init()
+            initFinished = true
+        }
+
+        var isOpen by remember { mutableStateOf(true) }
+        if (!initFinished) {
+            Window(
+                onCloseRequest = {},
+                undecorated = true,
+                transparent = true,
+                icon = painterResource(Res.drawable.logo),
+                state = rememberWindowState(width = 1.dp, height = 1.dp),
+            ) {}
+        } else if (isOpen) {
+            val windowState = rememberWindowState(width = 1280.dp, height = 768.dp)
+            Window(
+                onCloseRequest = {
+                    scope.cancel()
+                    isOpen = false
+                    BackendService.close()
+                },
+                undecorated = true,
+                resizable = true,
+                transparent = true,
+                icon = painterResource(Res.drawable.logo),
+                state = windowState,
             ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(5.dp)
-                        .shadow(3.dp, RoundedCornerShape(6.dp))
-                        .drawBehind {
-                            val squareSize = 16f
-                            val squareColor = selectedColor.copy(alpha = 0.04f)
-
-                            drawRect(
-                                color = PrimaryColors.White,
-                                topLeft = Offset.Zero,
-                                size = size
-                            )
-
-                            val cols = (size.width / squareSize).toInt() + 1
-                            val rows = (size.height / squareSize).toInt() + 1
-                            for (row in 0 until rows) {
-                                for (col in 0 until cols) {
-                                    // 只绘制偶数行偶数列、奇数行奇数列(呈棋盘格)
-                                    if ((row + col) % 2 == 0) {
-                                        drawRect(
-                                            color = squareColor,
-                                            topLeft = Offset(
-                                                x = col * squareSize,
-                                                y = row * squareSize
-                                            ),
-                                            size = Size(squareSize, squareSize),
-                                            style = Fill
+                LaunchedEffect(Unit) {
+                    AppSettings.proxyFlow.collect { proxy ->
+                        SingletonImageLoader.setUnsafe { context ->
+                            ImageLoader.Builder(context)
+                                .crossfade(true)
+                                .components {
+                                    add(
+                                        OkHttpNetworkFetcherFactory(
+                                            callFactory = {
+                                                OkHttpClient.Builder()
+                                                    .proxy(proxy)
+                                                    .build()
+                                            }
                                         )
+                                    )
+                                }
+                                .memoryCache {
+                                    MemoryCache.Builder()
+                                        .maxSizePercent(context, 0.25)
+                                        .build()
+                                }
+                                .diskCache {
+                                    DiskCache.Builder()
+                                        .directory(File(".cache/image_cache"))
+                                        .maxSizePercent(0.02)
+                                        .build()
+                                }
+                                .build()
+                        }
+                    }
+                }
+
+                val mainVm = viewModel { MainViewModel() }
+                val selectedMenuItem by mainVm.selectedMenuIndex.collectAsStateWithLifecycle()
+                val selectedColor by animateColorAsState(mainVm.menuItems[selectedMenuItem].color)
+
+                LaunchedEffect(mainVm.selectedMenuIndex) {
+                    mainVm.selectedMenuIndex.collect {
+                        if (it == 2) {
+                            isOpen = false
+                        }
+                    }
+                }
+
+                MaterialTheme(
+                    typography = Typography(
+                        defaultFontFamily = ChillRoundGothic()
+                    )
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(5.dp)
+                            .shadow(3.dp, RoundedCornerShape(6.dp))
+                            .drawBehind {
+                                val squareSize = 16f
+                                val squareColor = selectedColor.copy(alpha = 0.04f)
+
+                                drawRect(
+                                    color = PrimaryColors.White,
+                                    topLeft = Offset.Zero,
+                                    size = size
+                                )
+
+                                val cols = (size.width / squareSize).toInt() + 1
+                                val rows = (size.height / squareSize).toInt() + 1
+                                for (row in 0 until rows) {
+                                    for (col in 0 until cols) {
+                                        // 只绘制偶数行偶数列、奇数行奇数列(呈棋盘格)
+                                        if ((row + col) % 2 == 0) {
+                                            drawRect(
+                                                color = squareColor,
+                                                topLeft = Offset(
+                                                    x = col * squareSize,
+                                                    y = row * squareSize
+                                                ),
+                                                size = Size(squareSize, squareSize),
+                                                style = Fill
+                                            )
+                                        }
                                     }
                                 }
+                            },
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(6.dp),
+                    ) {
+                        Column {
+                            WindowDraggableArea {
+                                AppWindowTitleBar(mainVm)
                             }
-                        },
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(6.dp),
-                ) {
-                    Column {
-                        WindowDraggableArea {
-                            AppWindowTitleBar(mainVm)
+                            App(mainVm)
                         }
-                        App(mainVm)
                     }
                 }
             }
