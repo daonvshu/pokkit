@@ -204,7 +204,7 @@ fun main() {
 
         val scope = rememberCoroutineScope { Dispatchers.IO }
         LaunchedEffect(Unit) {
-            if (System.getenv("RunMode").lowercase() != "debug") {
+            if (System.getenv("RunMode")?.lowercase() != "debug") {
                 withContext(Dispatchers.IO) {
                     try {
                         ProcessBuilder("cmd", "/c", "start", "\"\"", "./pokkit_backend.exe").start()
